@@ -48,8 +48,8 @@ First convert half maps to hdf  using EMAN
 
 
 
-#--------------------------------------------------------------------------------------
-#    Example Run
+--------------------------------------------------------------------------------------
+    Example Run
 
 
 ThreeDFSC_ReleaseFeb2017.py HA-T10_half1_class001_unfil.hdf HA-T10_half2_class001_unfil.hdf T10               1.09
@@ -71,6 +71,7 @@ PlotsT10.jpg                 Same 5 Columns as Plots...jpg
 Radialn1T10Out.hdf  
 Radialn2T10Out.hdf  
 RadialResEMT10Out.hdf     
+     Not implemented
 #RadialcHT10Out.hdf  
 #Radialn12T10Out.hdf  
 #RadialFTT10Out.hdf   
