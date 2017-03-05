@@ -13,7 +13,7 @@ Usage: ThreeDFSC_ReleaseFeb2017.py
 
                 HalfMap1.hdf    HalfMap2.hdf   OutputStringLabel   AngstromsPerPixel  
                 
-DeltaTheta is hard coded to 20 degrees
+DeltaTheta (the conical patch parameter) is hard coded to 20 degrees
 
 
 Best is if this program comes with the anaconda package (2 or 3)
@@ -61,10 +61,7 @@ The functions need to be kept separated so that the precompiler can
 First convert half maps to hdf  using EMAN 
 
     e2proc3d.py T10_3_r1_map2Sh2.mrc T10_3_r1_map2Sh2.hdf
-    
-    a good value for  dthetaInDegrees is 20, and is hard coded
-
-
+  
 
 
 --------------------------------------------------------------------------------------
