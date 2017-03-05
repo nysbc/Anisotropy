@@ -1,12 +1,12 @@
 # Anisotropy
-These are programs that deal with anisotropy (both resolution and sampling) written by PR Baldwin
+These are programs that deal with anisotropy (both resolution and sampling) 
 
 
  Author: Philip Baldwin, March 2017
 
 
-  This program is  ThreeDFSC_ReleaseFeb2017.py
- A conical resolution program  written by P. R. Baldwin in December 2016
+# ThreeDFSC_ReleaseFeb2017.py
+ A conical resolution program 
 
 Usage: ThreeDFSC_ReleaseFeb2017.py
                 HalfMap1.hdf    HalfMap2.hdf   OutputStringLabel   AngstromsPerPixel            
@@ -72,6 +72,6 @@ Radialn1T10Out.hdf
 Radialn2T10Out.hdf  
 RadialResEMT10Out.hdf     
      Not implemented
-#RadialcHT10Out.hdf  
-#Radialn12T10Out.hdf  
-#RadialFTT10Out.hdf   
+RadialcHT10Out.hdf  
+Radialn12T10Out.hdf  
+RadialFTT10Out.hdf   
