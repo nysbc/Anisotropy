@@ -9,6 +9,7 @@ CreateSampVolPart1ReleaseMar2017.py ...
         StarFileDir StarFile  ResFileDir RMax 
            OutputStringLabel NumberToUse CSym CorD
 
+Please use absolute paths for StarFileDir and ResFileDir
 
 This program takes a cryosparc csv file or a Relion Star file
  from the StarFileDir. This gives a set of Euler Angles,
