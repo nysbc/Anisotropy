@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # This program is  ThreeDFSC_ReleaseMar2017.py
 #  A conical resolution program  written by P. R. Baldwin in November 2016
+#        pbaldwin@nysbc.org
+#
 # Try to use absolute paths
 
 # ThreeDFSC_ReleaseMar2017.py
