@@ -46,17 +46,26 @@ CreateSampVolPart1ReleaseMar2017.py ...
 
 
 This program takes a cryosparc csv file or a Relion Star file
+ 
  from the StarFileDir. This gives a set of Euler Angles,
-    or equivalently projection directions. 
-       The directions are symmetrized by CSym (the axial 
-   symmetry) and CorD (whether it is C or D). 
-   A Sampling Volume is created of size N^3 (where N =2RMax+1).
-   It is written to the same directory [ResFileDir] as that for the conical FSC outputs,
-  using OutputStringLabel to label the Sampling Volume Name.
-  It is 'SampVolBT'+OutputStringLabel +'RMax'+str(RMax)+'.hdf'
+ 
+  or equivalently projection directions. 
+  
+   The directions are symmetrized by CSym (the axial 
+    
+    symmetry) and CorD (whether it is C or D). 
+   
+    A Sampling Volume is created of size N^3 (where N =2RMax+1).
+  
+    It is written to the same directory [ResFileDir] as that for the conical FSC outputs,
+  
+      using OutputStringLabel to label the Sampling Volume Name.
+
+ It is 'SampVolBT'+OutputStringLabel +'RMax'+str(RMax)+'.hdf'
 
 The StarFileDir may be  different from the ResFileDir.
-Typically the ResFileDir is constructed from the same OutputStringLabel.
+
+ Typically the ResFileDir is constructed from the same OutputStringLabel.
 
 
 For more, see README_Sampling.md
