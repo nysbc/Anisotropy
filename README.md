@@ -3,6 +3,7 @@ These are programs that deal with anisotropy (both resolution and sampling)
 
 
  Author: Philip Baldwin, March 2017
+ Please contact me at pbaldwin@nysbc.org
 
 
 # ThreeDFSC_ReleaseMar2017.py
@@ -39,7 +40,8 @@ For more, see README_3DFSC.md
 
 Usage:
 CreateSampVolPart1ReleaseMar2017.py ...
-        StarFileDir StarFile  ResFileDir RMax 
+
+         StarFileDir StarFile  ResFileDir RMax 
            OutputStringLabel NumberToUse CSym CorD
 
 
