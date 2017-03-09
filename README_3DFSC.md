@@ -12,11 +12,13 @@ Usage: ThreeDFSC_ReleaseMar2017.py
 
 DeltaTheta (the conical patch parameter) is hard coded to 20 degrees
 
+Right now the HalfMaps should not be larger than 400^3. Please shrink accordingly.
+
 OutputStringLabel is a string that is used to create the output directory
 which is 'Results'+OutputStringLabel
 
-Within that directory is the main output which is ResEM+OutputStringLabel+'Out.hdf' 
-  which is the 3DFSC volume
+Within that directory is the main output which is 'ResEM'+OutputStringLabel+'Out.hdf' 
+  which is the 3DFSC volume.
 
 
 
