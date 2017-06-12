@@ -1,5 +1,19 @@
  Author: Philip Baldwin, March 2017
 
+# Suggested usage is now to download
+ 
+ ThreeDFSC_June2017.tar
+ This will contain ThreeDFSC_ReleaseJun2017.py 
+ and an additional python library which is a directory of python files:"mrcfiles"
+ 
+ Usage is identical to below: but with .mrc extensions
+ 
+ Usage: ThreeDFSC_ReleaseJun2017.py
+
+                HalfMap1.mrc    HalfMap2.mrc   OutputStringLabel   AngstromsPerPixel  
+
+See below for more
+
 
 # ThreeDFSC_ReleaseMar2017.py
 
