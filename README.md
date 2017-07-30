@@ -4,7 +4,7 @@ Installation: "pip install mrcfile"
 
 3DFSC is compatible and tested with both Python 2.7 and Python 3.5+
 
-Command line execute of the script is possible with the command "./run_fsc" from the top-most directory.
+Command line execute of the script is possible with the command "./run_fsc" from the top-most directory (tested in both bash and csh).
 
 3DFSC is also accessible programmaticaly, for example:
 
