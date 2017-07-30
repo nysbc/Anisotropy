@@ -1,8 +1,8 @@
 This is the most recent version of 3DFSC, by Philip Baldwin, Yong Zi Tan, and Dmitry Lyumkis.
 
-Installation: "pip install mrcfile"
+Installation: "conda env create -f environment.yml"
 
-3DFSC is compatible and tested with both Python 2.7 and Python 3.5+
+3DFSC is compatible and tested with Python 3.5+
 
 Command line execute of the script is possible with the command "./run_fsc" from the top-most directory (tested in both bash and csh).
 
