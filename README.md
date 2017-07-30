@@ -1,3 +1,22 @@
+This is the most recent version of 3DFSC, by Philip Baldwin, Yong Zi Tan, and Dmitry Lyumkis.
+
+Installation: "pip install mrcfile"
+
+3DFSC is compatible and tested with both Python 2.7 and Python 3.5+
+
+Command line execute of the script is possible with the command "./run_fsc" from the top-most directory, or also "python ThreeDFSC/ThreeDFSC_Start.py" from the top-most directory.
+
+3DFSC is also accessible programmaticaly, for example:
+
+import ThreeDFSC.ThreeDFSC_Start as run_fsc
+
+run_rsc.execite(options)
+
+
+...where "options" is an opt-parser object containing the parameters of the program. Thanks,
+
+--CJN
+
 # Anisotropy
 These are programs that deal with anisotropy (both resolution and sampling) 
 

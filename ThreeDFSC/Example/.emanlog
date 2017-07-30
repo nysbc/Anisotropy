@@ -1,0 +1,5 @@
+2247	1499656472	1	8804	proc3d T40_map1_Masked_144.mrc T40_map2_Masked_144.mrc apix=1.31 fsc=fsc.out
+2247	1499656473	10	T40_map1_Masked_144.mrc	
+2247	1499656473	10	T40_map2_Masked_144.mrc	
+2247	1499656473	11	fsc.out	PSC
+2247	1499656473	2	-	
