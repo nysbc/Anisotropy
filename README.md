@@ -1,3 +1,5 @@
+### 3DFSC Program Suite Version 2.3 ###
+
 This is the most recent version of 3DFSC, by Philip Baldwin, Yong Zi Tan, and Dmitry Lyumkis.
 Conda environment configured by Carl Negro.
 3DFSC Program Suite requires Anaconda 3 to run, and UCSF Chimera to visualize the outputs.
