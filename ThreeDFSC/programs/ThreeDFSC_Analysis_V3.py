@@ -526,7 +526,8 @@ def check_globalFSC(ThreeDFSC,apix):
     
     if (shells_below_pt143 == 0):
             print ("\n\033[1;31;40mWarning: Your global half-map FSC does not fall below 0.143. You may have reached the Nyquist sampling limit. Try unbinning your data. \033[0;37;40m")
-    
+            resolution_below_pt143.append(apix)
+
     if (shells_below_pt143 != total_shells_past_first_pt143):
             print ("\n\033[1;31;40mWarning: Your glboal half-map FSC rises above 0.143 after the first crossing. Check your refinement and masking. \033[0;37;40m")
     
