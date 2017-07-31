@@ -1,4 +1,4 @@
-name: fscenv
+name: fsc
 channels:
 - defaults
 dependencies:
@@ -54,15 +54,7 @@ dependencies:
 - xz=5.2.2=1
 - zlib=1.2.8=3
 - pip:
-  - amqp==1.4.9
-  - anyjson==0.3.3
-  - billiard==3.3.0.23
-  - celery==3.1.18
-  - django==1.11.3
-  - kombu==3.0.37
   - mrcfile==1.0.0
-  - pyminizip==0.2.1
-  - redis==2.10.3
-  - vine==1.1.4
-prefix: /home/cnegro/anaconda3/envs/fscenv
+  - scikit-learn==0.18.2
+prefix: /home/cnegro/anaconda3/envs/fsc
 

@@ -413,7 +413,6 @@ def HistogramCreation(histogram_sampling,histogram,ThreeDFSC,apix,cutoff,spheric
 	#print (histogramlist)
 	
 	## Plotting
-
 	plt.title("Histogram and Directional FSC Plot for %s \n Sphericity = %0.3f out of 1. Global resolution = %0.2f $\AA$.\n \n \n \n" % (str(ThreeDFSC),sphericity,global_resolution))
 	ax1 = plt.subplot(111)
 	ax1.set_xlim([minrange,maxrange])

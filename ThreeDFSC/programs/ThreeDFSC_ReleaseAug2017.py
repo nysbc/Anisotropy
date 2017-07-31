@@ -890,8 +890,6 @@ def main(fNHalfMap1,fNHalfMap2,OutputStringLabel,APixels,dthetaInDegrees):
     NormalizedFreq = result[0:(inc+1)];
     resultAve= result[(inc+1):(2*(inc+1))];# This takes values inc+1 values from inc+1 to 2*inc+1
 
-    print("CWD IS",os.getcwd())
-    print("&")
     with open(resultAveOut, "w") as fL1:
             AveWriter = csv.writer(fL1)
             for j in range(inc+1):
@@ -902,7 +900,6 @@ def main(fNHalfMap1,fNHalfMap2,OutputStringLabel,APixels,dthetaInDegrees):
 
     #k0	 = np.array(range(Nxf))/APixels/2.0/Nxf;
 
-    print("&")
     aa= np.abs(np.array(resultAve))<.13
     bb=np.where(aa)[0];
     try:
