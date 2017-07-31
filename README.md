@@ -11,7 +11,7 @@ Conda environment configured by Carl Negro.
 
 ## Execution ##
 
-1) Be in the directory containing your maps. Relative paths are okay for the program too.
+1) Be in the directory containing your maps. Relative paths are okay for the program.
 2) Execute the run3DFSC.csh script. If no options are given, it will print out the help menu for you.
 3) Runs usually take from minutes up to hours for extremely large box sizes (we have tested 600^3). Progress bars will help indicate the state of processing.
 
