@@ -24,4 +24,4 @@ Conda environment configured by Carl Negro.
     
     where "options" is an opt-parser object containing the parameters of the program.
 
-Questions and feedback welcomed, and should be sent to prbprb2@gmail.com, ytan@nysbc.org and dlyumkis@salk.edu
+Questions and feedback welcomed, and should be sent to prbprb2@gmail.com, ytan@nysbc.org and dlyumkis@salk.edu.
