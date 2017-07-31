@@ -1,4 +1,4 @@
-### 3DFSC Program Suite Version 2.3 ###
+### 3DFSC Program Suite Version 2.3 (31 July 2017) ###
 
 This is the most recent version of 3DFSC, by Philip Baldwin, Yong Zi Tan, and Dmitry Lyumkis.
 Conda environment configured by Carl Negro.
