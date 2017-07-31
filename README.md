@@ -16,8 +16,8 @@ Conda environment configured by Carl Negro.
 3) Runs usually take from minutes up to hours for extremely large box sizes (we have tested 600^3). Progress bars will help indicate the state of processing.
 
 4) 3DFSC is also accessible programmaticaly, for example:
-    `import ThreeDFSC.ThreeDFSC_Start as run_fsc
-    run_fsc.execute(options)`
+    <pre>import ThreeDFSC.ThreeDFSC_Start as run_fsc
+    run_fsc.execute(options)</pre>
     
     where "options" is an opt-parser object containing the parameters of the program.
 
