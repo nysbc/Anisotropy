@@ -1,2 +1,5 @@
 *.pyc
 *.bak
+Results_T40-3DFSC/*
+Example/Results_T40-3DFSC/*
+Example/output.log
