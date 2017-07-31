@@ -32,11 +32,10 @@ import os
 import numpy as np
 import mrcfile
 import sys
+import copy
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import matplotlib.lines as mlines
-import scipy.ndimage
-import scipy.misc
 from math import sqrt, acos, atan2, cos, sin, pi
 from skimage import measure
 from scipy.ndimage.filters import gaussian_filter
