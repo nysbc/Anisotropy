@@ -296,19 +296,24 @@ def threshold_binarize(inmrc, thresholded, thresholdedbinarized, FSCCutoff, Thre
 def calculate_sphericity(inmrc):
 	# read MRC
 	inputmrc = (mrcfile.open(inmrc)).data
+	inputmrc_copy = copy.deepcopy(inputmrc)
+	extended_inputmrc = np.zeros((inputmrc.shape[0]+10,inputmrc.shape[1]+10,inputmrc.shape[2]+10),dtype=np.float) ## Had to extend it before Gaussian filter, else you might edge effects
+	extended_inputmrc[6:6+inputmrc.shape[0], 6:6+inputmrc.shape[1], 6:6+inputmrc.shape[2]] = inputmrc_copy
 	
 	# Gaussian filtering
 	# Sigma=1 works well
-	blurred = gaussian_filter(inputmrc,sigma=1)
+	blurred = gaussian_filter(extended_inputmrc,sigma=1)
 
 	# Find surfaces using marching cube algorithm
 	verts, faces, normals, values = measure.marching_cubes_lewiner(blurred,level=0.5) ## Fixed thresholded due to Gaussian blurring
 	
 	# Find surface area
 	surface_area = measure.mesh_surface_area(verts,faces)
-	
+
 	# Find volume
-	volume = np.sum(inputmrc)
+	blurred[blurred >= 0.5] = 1
+	blurred[blurred < 0.5] = 0
+	volume = np.sum(blurred)
 	
 	# Calculate sphericity
 	sphericity = (((pi)**(1/3))*((6*volume)**(2/3)))/(surface_area)
