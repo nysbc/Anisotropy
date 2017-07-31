@@ -4,7 +4,7 @@ Conda environment configured by Carl Negro.
 
 ## Installation ##
 1) Be in the desired directory where you want to install the 3DFSC Program Suite
-2) Type "git clone https://github.com/nysbc/Anisotropy.git" to get a copy of the program. Make sure you have the git package installed in your Linux machine.
+2) Type `git clone https://github.com/nysbc/Anisotropy.git` to get a copy of the program. Make sure you have the git package installed in your Linux machine.
 3) Type "cd Anisotropy" to enter the directory.
 4) Type "conda env create -f environment.yml" to create the Anaconda environment containing required packages. This would only work if Anaconda 3 is installed and used as the default Python
 5) Edit the file run3DFSC.csh to reflect your Anaconda3 and 3DFSC directory (which contains ThreeDFSC_Start.py).
