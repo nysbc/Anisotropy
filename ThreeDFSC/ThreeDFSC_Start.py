@@ -6,7 +6,9 @@
 ### 3D FSC Software Wrapper
 ### Written by Philip Baldwin
 ### Edited by Yong Zi Tan and Dmitry Lyumkis
+### Anaconda environment by Carl Negro
 ### Downloaded from https://github.com/nysbc/Anisotropy
+### git clone -b carl_dev_v2.3 https://github.com/nysbc/Anisotropy.git
 ### 
 ### See Paper:
 ### Addressing preferred specimen orientation in single-particle cryo-EM through tilting
