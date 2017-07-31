@@ -417,6 +417,7 @@ def HistogramCreation(histogram_sampling,histogram,ThreeDFSC,apix,cutoff,spheric
 	#print (histogramlist)
 	
 	## Plotting
+
 	plt.title("Histogram and Directional FSC Plot for %s \n Sphericity = %0.3f out of 1. Global resolution = %0.2f $\AA$.\n \n \n \n" % (str(ThreeDFSC),sphericity,global_resolution))
 	ax1 = plt.subplot(111)
 	ax1.set_xlim([minrange,maxrange])
@@ -497,76 +498,67 @@ def ChimeraOutputCreate(ThreeDFSC,apix,maxRes,minRes,fullmap,globalspatialfreque
 
 def check_globalFSC(ThreeDFSC,apix):
 
-    directory = "Results_" + ThreeDFSC
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-    a = open("Results_" + ThreeDFSC + "/ResEM" + ThreeDFSC + "OutglobalFSC.csv","r")
-    b = a.readlines()
-    b.pop(0)
-    
-    globalspatialfrequency = []
-    globalfsc = []
+	a = open("Results_" + ThreeDFSC + "/ResEM" + ThreeDFSC + "OutglobalFSC.csv","r")
+	b = a.readlines()
+	b.pop(0)
+	
+	globalspatialfrequency = []
+	globalfsc = []
 
-    for i in b:
-            k = (i.strip()).split(",")
-            globalspatialfrequency.append(float(k[0]))
-            globalfsc.append(float(k[2]))
-    
-    shells_below_pt143 = 0
-    total_shells_past_first_pt143 = 0
-    resolution_below_pt143 = []
-    
-    for i in range(len(globalfsc)):
-            if (float(globalfsc[i]) < 0.143):
-                    shells_below_pt143 += 1
-                    resolution_below_pt143.append((1/(globalspatialfrequency[i]))*apix)
-            if (shells_below_pt143 > 0):
-                    total_shells_past_first_pt143 += 1
-    
-    if (shells_below_pt143 == 0):
-            print ("\n\033[1;31;40mWarning: Your global half-map FSC does not fall below 0.143. You may have reached the Nyquist sampling limit. Try unbinning your data. \033[0;37;40m")
-            resolution_below_pt143.append(apix)
+	for i in b:
+		k = (i.strip()).split(",")
+		globalspatialfrequency.append(float(k[0]))
+		globalfsc.append(float(k[2]))
+	
+	shells_below_pt143 = 0
+	total_shells_past_first_pt143 = 0
+	resolution_below_pt143 = []
+	
+	for i in range(len(globalfsc)):
+		if (float(globalfsc[i]) < 0.143):
+			shells_below_pt143 += 1
+			resolution_below_pt143.append((1/(globalspatialfrequency[i]))*apix)
+		if (shells_below_pt143 > 0):
+			total_shells_past_first_pt143 += 1
+	
+	if (shells_below_pt143 == 0):
+		print ("\n\033[1;31;40mWarning: Your global half-map FSC does not fall below 0.143. You may have reached the Nyquist sampling limit. Try unbinning your data. \033[0;37;40m")
+		resolution_below_pt143.append(apix)
 
-    if (shells_below_pt143 != total_shells_past_first_pt143):
-            print ("\n\033[1;31;40mWarning: Your glboal half-map FSC rises above 0.143 after the first crossing. Check your refinement and masking. \033[0;37;40m")
-    
-    return resolution_below_pt143[0] ## Returns global resolution
-    
+	if (shells_below_pt143 != total_shells_past_first_pt143):
+		print ("\n\033[1;31;40mWarning: Your global half-map FSC rises above 0.143 after the first crossing. Check your refinement and masking. \033[0;37;40m")
+	
+	return resolution_below_pt143[0] ## Returns global resolution
+	
 def main(halfmap1,halfmap2,fullmap,apix,ThreeDFSC,dthetaInDegrees,histogram,FSCCutoff,ThresholdForSphericity,HighPassFilter):
-    # Part 00
-    # Warnings and checks. Invisible to user unless something is wrong
-    global_resolution = check_globalFSC(ThreeDFSC,apix)
+	# Part 00
+	# Warnings and checks. Invisible to user unless something is wrong
+	global_resolution = check_globalFSC(ThreeDFSC,apix)
 
-    # Part 01
-    print ("\n\033[1;34;40mAnalysis Step 01: Generating thresholded and thresholded + binarized maps. \033[0;37;40m")
-    print ("These maps can be used to make figures, and are required for calculating sphericity.")
-    FourierShellHighPassFilter = convert_highpassfilter_to_Fourier_Shells(ThreeDFSC,apix,HighPassFilter)
-    threshold_binarize("Results_" + ThreeDFSC + "/ResEM" + ThreeDFSC + "Out.mrc", "Results_" + ThreeDFSC + "/" + ThreeDFSC + "_Thresholded.mrc", "Results_" + ThreeDFSC + "/" + ThreeDFSC + "_ThresholdedBinarized.mrc", FSCCutoff, ThresholdForSphericity,FourierShellHighPassFilter,apix)
-    print ("Results_" + ThreeDFSC + "/" + ThreeDFSC + "_Thresholded.mrc at " + str(FSCCutoff) + " cutoff and Results_" + ThreeDFSC + "/" + ThreeDFSC + "_ThresholdedBinarized.mrc at " + str(ThresholdForSphericity) + " cutoff for sphericity generated.")
-    # Part 02
-    print ("\n\033[1;34;40mAnalysis Step 02: Calculating sphericity. \033[0;37;40m")
-    sphericity = calculate_sphericity("Results_" + ThreeDFSC + "/" + ThreeDFSC + "_ThresholdedBinarized.mrc")
-    print ("Sphericity is %f out of 1. 1 represents a perfect sphere." % (sphericity))
-    # Part 03
-    print ("\n\033[1;34;40mAnalysis Step 03: Generating Histogram. \033[0;37;40m")
-    histogram_sampling = histogram_sample("Results_" + ThreeDFSC + "/ResEM" + ThreeDFSC + "Out.mrc",FourierShellHighPassFilter)
-    # Part 04
-    maxRes, minRes, globalspatialfrequency, globalfsc = HistogramCreation(histogram_sampling,histogram,ThreeDFSC,apix,FSCCutoff,sphericity,global_resolution)
-    print ("Results_" + ThreeDFSC + "/" + histogram + ".pdf generated.")
-    # Part 05
-    print ("\n\033[1;34;40mAnalysis Step 04: Generating Output Files for Chimera Viewing of 3DFSC \033[0;37;40m")
-    directory = "Results_" + str(ThreeDFSC)
-    if not os.path.exists(directory):
-        print("Directory did not exist, creating directory now.")
-        os.makedirs(directory)
-    else:
-        print("Directory exists.")
-    os.system("mkdir Results_" + str(ThreeDFSC) + "/Chimera")
-    os.system("cp Results_" + str(ThreeDFSC) + "/" + str(ThreeDFSC) + ".mrc " + " Results_" + str(ThreeDFSC) + "/Chimera/")
-    os.system("cp "+ fullmap + " Results_" + str(ThreeDFSC) + "/Chimera/")
-    ChimeraOutputCreate(ThreeDFSC,apix,maxRes,minRes,fullmap,globalspatialfrequency,globalfsc,global_resolution)
-    print ("Results_" + str(ThreeDFSC) + "/Chimera/3DFSCPlot_Chimera.cmd and Results_" + str(ThreeDFSC) + "/Chimera/lineplot.py generated.")
-    print ("To view in Chimera, open 3DFSCPlot_Chimera.cmd in Chimera, with lineplot.py and the mrc files in the Chimera folder in the same directory.")
-    
+	# Part 01
+	print ("\n\033[1;34;40mAnalysis Step 01: Generating thresholded and thresholded + binarized maps. \033[0;37;40m")
+	print ("These maps can be used to make figures, and are required for calculating sphericity.")
+	FourierShellHighPassFilter = convert_highpassfilter_to_Fourier_Shells(ThreeDFSC,apix,HighPassFilter)
+	threshold_binarize("Results_" + ThreeDFSC + "/ResEM" + ThreeDFSC + "Out.mrc", "Results_" + ThreeDFSC + "/" + ThreeDFSC + "_Thresholded.mrc", "Results_" + ThreeDFSC + "/" + ThreeDFSC + "_ThresholdedBinarized.mrc", FSCCutoff, ThresholdForSphericity,FourierShellHighPassFilter,apix)
+	print ("Results_" + ThreeDFSC + "/" + ThreeDFSC + "_Thresholded.mrc at " + str(FSCCutoff) + " cutoff and Results_" + ThreeDFSC + "/" + ThreeDFSC + "_ThresholdedBinarized.mrc at " + str(ThresholdForSphericity) + " cutoff for sphericity generated.")
+	# Part 02
+	print ("\n\033[1;34;40mAnalysis Step 02: Calculating sphericity. \033[0;37;40m")
+	sphericity = calculate_sphericity("Results_" + ThreeDFSC + "/" + ThreeDFSC + "_ThresholdedBinarized.mrc")
+	print ("Sphericity is %0.2f out of 1. 1 represents a perfect sphere." % (sphericity))
+	# Part 03
+	print ("\n\033[1;34;40mAnalysis Step 03: Generating Histogram. \033[0;37;40m")
+	histogram_sampling = histogram_sample("Results_" + ThreeDFSC + "/ResEM" + ThreeDFSC + "Out.mrc",FourierShellHighPassFilter)
+	# Part 04
+	maxRes, minRes, globalspatialfrequency, globalfsc = HistogramCreation(histogram_sampling,histogram,ThreeDFSC,apix,FSCCutoff,sphericity,global_resolution)
+	print ("Results_" + ThreeDFSC + "/" + histogram + ".pdf generated.")
+	# Part 05
+	print ("\n\033[1;34;40mAnalysis Step 04: Generating Output Files for Chimera Viewing of 3DFSC \033[0;37;40m")
+	os.system("mkdir Results_" + str(ThreeDFSC) + "/Chimera")
+	os.system("cp Results_" + str(ThreeDFSC) + "/" + str(ThreeDFSC) + ".mrc " + " Results_" + str(ThreeDFSC) + "/Chimera/")
+	os.system("cp " + fullmap + " Results_" + str(ThreeDFSC) + "/Chimera/")
+	ChimeraOutputCreate(ThreeDFSC,apix,maxRes,minRes,fullmap,globalspatialfrequency,globalfsc,global_resolution)
+	print ("Results_" + str(ThreeDFSC) + "/Chimera/3DFSCPlot_Chimera.cmd and Results_" + str(ThreeDFSC) + "/Chimera/lineplot.py generated.")
+	print ("To view in Chimera, open 3DFSCPlot_Chimera.cmd in Chimera, with lineplot.py and the mrc files in the Chimera folder in the same directory.")
+	
 if __name__ == '__main__':
-    main(sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4],sys.argv[5],sys.argv[6],sys.argv[7],sys.argv[8],sys.argv[9],sys.argv[10])
+	main(sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4],sys.argv[5],sys.argv[6],sys.argv[7],sys.argv[8],sys.argv[9],sys.argv[10])
