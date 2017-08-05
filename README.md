@@ -17,7 +17,7 @@ Conda environment configured by Carl Negro.
 2) Execute the `run3DFSC.csh` script. If no options are given, it will print out the help menu for you.
 3) Runs usually take from minutes up to hours for extremely large box sizes (we have tested 600^3). Progress bars will help indicate the state of processing.
 4) 3DFSC is also accessible programmaticaly, for example:
-    <pre>import ThreeDFSC.ThreeDFSC_Start as run_fsc
+    <pre>import Anisotropy.ThreeDFSC.ThreeDFSC_Start as run_fsc
     run_fsc.execute(options)</pre>
     
     where "options" is an opt-parser object containing the parameters of the program.

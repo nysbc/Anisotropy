@@ -142,7 +142,7 @@ def convert_highpassfilter_to_Fourier_Shells(ThreeDFSC,apix,highpassfilter):
 
 	for i in b:
 		k = (i.strip()).split(",")
-		globalspatialfrequency.append(float(k[0]))
+		globalspatialfrequency.append(float(k[0])/apix)
 		globalfsc.append(float(k[2]))
 
 	for i in range(len(globalspatialfrequency)):
@@ -508,7 +508,7 @@ def check_globalFSC(ThreeDFSC,apix):
 
 	for i in b:
 		k = (i.strip()).split(",")
-		globalspatialfrequency.append(float(k[0]))
+		globalspatialfrequency.append(float(k[0])/apix)
 		globalfsc.append(float(k[2]))
 	
 	shells_below_pt143 = 0
