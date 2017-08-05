@@ -448,6 +448,7 @@ def HistogramCreation(histogram_sampling,histogram,ThreeDFSC,apix,cutoff,spheric
 
 	#plt.show()
 	plt.savefig("Results_" + ThreeDFSC + "/" + histogram + ".pdf", bbox_extra_artists=[xlabel], bbox_inches="tight")
+	plt.savefig("Results_" + ThreeDFSC + "/" + histogram + ".png", bbox_extra_artists=[xlabel], bbox_inches="tight")
 	
 	#Flush out plots
 	plt.clf()
