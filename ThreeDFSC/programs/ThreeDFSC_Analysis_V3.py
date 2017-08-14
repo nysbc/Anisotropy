@@ -296,9 +296,9 @@ def calculate_sphericity(inmrc):
 	# read MRC
 	inputmrc = (mrcfile.open(inmrc)).data
 	inputmrc_copy = copy.deepcopy(inputmrc)
-	extended_inputmrc = np.zeros((inputmrc.shape[0]+10,inputmrc.shape[1]+10,inputmrc.shape[2]+10),dtype=np.float) ## Had to extend it before Gaussian filter, else you might edge effects
+	extended_inputmrc = np.zeros((inputmrc.shape[0]+10,inputmrc.shape[1]+10,inputmrc.shape[2]+10),dtype=np.float) ## Had to extend it before Gaussian filter, else you might get edge effects
 	extended_inputmrc[6:6+inputmrc.shape[0], 6:6+inputmrc.shape[1], 6:6+inputmrc.shape[2]] = inputmrc_copy
-	
+
 	# Gaussian filtering
 	# Sigma=1 works well
 	blurred = gaussian_filter(extended_inputmrc,sigma=1)
@@ -540,11 +540,13 @@ def main(halfmap1,halfmap2,fullmap,apix,ThreeDFSC,dthetaInDegrees,histogram,FSCC
 	print ("\n\033[1;34;40mAnalysis Step 01: Generating thresholded and thresholded + binarized maps. \033[0;37;40m")
 	print ("These maps can be used to make figures, and are required for calculating sphericity.")
 	FourierShellHighPassFilter = convert_highpassfilter_to_Fourier_Shells(ThreeDFSC,apix,HighPassFilter)
-	threshold_binarize("Results_" + ThreeDFSC + "/ResEM" + ThreeDFSC + "Out.mrc", "Results_" + ThreeDFSC + "/" + ThreeDFSC + "_Thresholded.mrc", "Results_" + ThreeDFSC + "/" + ThreeDFSC + "_ThresholdedBinarized.mrc", FSCCutoff, ThresholdForSphericity,FourierShellHighPassFilter,apix)
+	#threshold_binarize("Results_" + ThreeDFSC + "/ResEM" + ThreeDFSC + "Out.mrc", "Results_" + ThreeDFSC + "/" + ThreeDFSC + "_Thresholded.mrc", "Results_" + ThreeDFSC + "/" + ThreeDFSC + "_ThresholdedBinarized.mrc", FSCCutoff, ThresholdForSphericity,FourierShellHighPassFilter,apix)
 	print ("Results_" + ThreeDFSC + "/" + ThreeDFSC + "_Thresholded.mrc at " + str(FSCCutoff) + " cutoff and Results_" + ThreeDFSC + "/" + ThreeDFSC + "_ThresholdedBinarized.mrc at " + str(ThresholdForSphericity) + " cutoff for sphericity generated.")
 	# Part 02
 	print ("\n\033[1;34;40mAnalysis Step 02: Calculating sphericity. \033[0;37;40m")
 	sphericity = calculate_sphericity("Results_" + ThreeDFSC + "/" + ThreeDFSC + "_ThresholdedBinarized.mrc")
+	if sphericity > 1.0: 
+		print ("\n\033[1;31;40mWarning: sphericity is >1. This problem usually has to do with input half maps. Please check your inputs. \033[0;37;40m")
 	print ("Sphericity is %0.2f out of 1. 1 represents a perfect sphere." % (sphericity))
 	# Part 03
 	print ("\n\033[1;34;40mAnalysis Step 03: Generating Histogram. \033[0;37;40m")

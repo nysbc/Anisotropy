@@ -96,7 +96,16 @@ def execute(options):
 	if halfmap1 == halfmap2:
 			print ("\n\033[1;31;40mError: Both your half maps point to the same file.\033[0;37;40m\n")
 			sys.exit()
-	
+
+	# Make sure half maps are the same size
+	h1 = mrcfile.open(halfmap1).data
+	h2 = mrcfile.open(halfmap2).data
+	[nxf,nyf,nzf] = h1.shape
+	[nxg,nyg,nzg] = h2.shape
+	if nxf != nxg or nyf != nyg or nzf !=nzg:
+		print("\n\033[1;31;40mError: Half maps are not the same size, check your inputs.\033[0;37;40m\n")
+		sys.exit()
+
 	# Part 01
 	
 	if (options.Skip3DFSCGeneration == "False"):
@@ -128,7 +137,7 @@ def execute(options):
 	print ("\nDone")
 	print ("Results are in the folder Results_" + str(options.ThreeDFSC))
 	print ("--- %s seconds ---" % (time.time() - start_time))
-	print ("Please email pbaldwin@nysbc.org, ytan@nysbc.org and dlyumkis@salk.edu if there are any problems/suggestions. Thank you.\n")
+	print ("Please email prbprb2@gmail.com, ytan@nysbc.org and dlyumkis@salk.edu if there are any problems/suggestions. Thank you.\n")
 	return
 
 if __name__ == '__main__':

@@ -50,7 +50,6 @@ def print_progress(iteration, total, prefix='', suffix='', decimals=1):
 		decimals	- Optional	: positive number of decimals in percent complete (Int)
 		bar_length	- Optional	: character length of bar (Int)
 	"""
-	
 	rows, columns = os.popen('stty size', 'r').read().split()
 	bar_length = int(float(columns)/2)
 	str_format = "{0:." + str(decimals) + "f}"
@@ -659,6 +658,7 @@ def NormalizeShells(nx,ny,nz,kXofR,kYofR,kZofR,inc,retofROutR, retofROutI, n1ofR
 #			Plots+OutputStringLabel.jpg which is the slices along x, y, z 
 
 def main(fNHalfMap1,fNHalfMap2,OutputStringLabel,APixels,dthetaInDegrees):
+#	enablePrint()
 	blockPrint()
 	#fNHalfMap1='run_half1_class001_unfil.mrc'
 	#fNHalfMap2='run_half2_class001_unfil.mrc'
@@ -760,7 +760,15 @@ def main(fNHalfMap1,fNHalfMap2,OutputStringLabel,APixels,dthetaInDegrees):
 		h5f_HalfMap1.close()
 		h5f_HalfMap2.close()
 
-
+	#%%             check size matches, commented out here and put into Analysis program
+#	[nxf,nyf,nzf] = f.shape
+#	[nxg,nyg,nzg] = g.shape
+#	print("nxf: %g, nyf: %g, nzf: %g" % (nxf,nyf,nzf))
+#	print("nxg: %g, nyg: %g, nzg: %g" % (nxg,nyg,nzg))
+#	if nxf != nxg or nyf != nyg or nzf !=nzg:
+#		enablePrint()
+#		print("\n\033[1;31;40mError: Half maps are not the same size, check your inputs.\033[0;37;40m\n")
+#		sys.exit()
 		
 	startTime = time.time()
 
