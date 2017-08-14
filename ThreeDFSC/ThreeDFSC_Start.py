@@ -8,7 +8,7 @@
 ### Edited by Yong Zi Tan and Dmitry Lyumkis
 ### Anaconda environment by Carl Negro
 ### Downloaded from https://github.com/nysbc/Anisotropy
-### git clone -b carl_dev_v2.3 https://github.com/nysbc/Anisotropy.git
+### git clone https://github.com/nysbc/Anisotropy.git
 ### 
 ### See Paper:
 ### Addressing preferred specimen orientation in single-particle cryo-EM through tilting
@@ -28,7 +28,8 @@
 ### 2.1 - 3D FSC takes MRC files
 ### 2.2 - Fixed bugs with 3DFSC missing a line in volume, and plotting title error
 ### 2.3 - Fixed various bugs, new thresholding algorithm, added progress bar, improved Chimera plotting, more error checking
-version = "2.3"
+### 2.4 - Incorporation with website, use Click package
+version = "2.4"
 ### ============================
 
 #pythonlib
@@ -63,10 +64,10 @@ def masking(inmrc,mask,masked_outmrc):
 
 def execute(options):
 	click.echo(click.style("Welcome to 3DFSC Program Suite Version %s" % version,fg="blue"))
-	click.echo(click.style("Downloaded from https://github.com/nysbc/Anisotropy",fg="blue"))
-	click.echo(click.style("Published article at http://doi.org/10.1038/nmeth.4347",fg="blue"))
-	click.echo(click.style("Anaconda 3 is required to run this program, and UCSF Chimera to visualize some outputs. Please install them if they are not present."fg="blue"))
-	click.echo(click.style("Please be patient: Program usually finishes in minutes, but can take up to hours to run for extremely large box sizes."fg="blue"))
+	click.echo(click.style("Downloaded from https://github.com/nysbc/Anisotropy"))
+	click.echo(click.style("Published article at http://doi.org/10.1038/nmeth.4347"))
+	click.echo(click.style("Anaconda 3 is required to run this program, and UCSF Chimera to visualize some outputs. Please install them if they are not present."))
+	click.echo(click.style("Please be patient: Program usually finishes in minutes, but can take up to hours to run for extremely large box sizes.\n"))
 	
 	# Part 00
 	
