@@ -305,6 +305,7 @@ def calculate_sphericity(inmrc):
 
 	# Find surfaces using marching cube algorithm
 	verts, faces, normals, values = measure.marching_cubes_lewiner(blurred,level=0.5) ## Fixed thresholded due to Gaussian blurring
+	# test
 	
 	# Find surface area
 	surface_area = measure.mesh_surface_area(verts,faces)
