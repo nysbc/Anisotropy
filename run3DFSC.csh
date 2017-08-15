@@ -1,4 +1,4 @@
-### A shell script to run 3DFSC using Anaconda3 without altering the user's Python environment
+### A shell script to run 3DFSC using Anaconda3 without altering the user's Python environment 
 
 source activate fsc
 
