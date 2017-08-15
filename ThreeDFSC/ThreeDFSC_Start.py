@@ -143,10 +143,14 @@ def execute(options):
 if __name__ == '__main__':
 
     parser = OptionParser(usage="usage: %prog [options]", version="%prog " + version)
-    parser.add_option("--halfmap1", dest="halfmap1", action="store", type="string", help="First half map of 3D reconstruction. MRC format. Can be masked or unmasked. \033[1;34;40mRequired. \033[0;37;40m", metavar="HALFMAP1.MRC")
-    parser.add_option("--halfmap2", dest="halfmap2", action="store", type="string", help="Second half map of 3D reconstruction. MRC format. Can be masked or unmasked. \033[1;34;40mRequired. \033[0;37;40m", metavar="HALFMAP2.MRC")
-    parser.add_option("--fullmap", dest="fullmap", action="store", type="string", help="Full map of 3D reconstruction. MRC format. Can be masked or unmasked, can be sharpened or unsharpened. \033[1;34;40mRequired. \033[0;37;40m", metavar="FULLMAP.MRC")
-    parser.add_option("--apix", dest="apix", action="store", type="float", default=1, help="Angstrom per pixel of 3D map. \033[1;34;40mRequired. \033[0;37;40m", metavar="FLOAT")
+    helpmsg=click.style("First half map of 3D reconstruction. MRC format. Can be masked or unmasked. ") + click.style("Required", fg="blue", bold=True)
+    parser.add_option("--halfmap1", dest="halfmap1", action="store", type="string", help=helpmsg, metavar="HALFMAP1.MRC")
+    helpmsg=click.style("Second half map of 3D reconstruction. MRC format. Can be masked or unmasked. ") + click.style("Required", fg="blue", bold=True)
+    parser.add_option("--halfmap2", dest="halfmap2", action="store", type="string", help=helpmsg, metavar="HALFMAP2.MRC")
+    helpmsg=click.style("Full map of 3D reconstruction. MRC format. Can be masked or unmasked, can be sharpened or unsharpened. ") + click.style("Required", fg="blue", bold=True)
+    parser.add_option("--fullmap", dest="fullmap", action="store", type="string", help=helpmsg, metavar="FULLMAP.MRC")
+    helpmsg=click.style("Angstrom per pixel of 3D map. ") + click.style("Required", fg="blue", bold=True)
+    parser.add_option("--apix", dest="apix", action="store", type="float", default=1, help=helpmsg, metavar="FLOAT")
     parser.add_option("--mask", dest="mask", action="store", type="string", help="If given, it would be used to mask the half maps during 3DFSC generation and analysis.", metavar="MASK.MRC")
     parser.add_option("--ThreeDFSC", dest="ThreeDFSC", action="store", type="string", default="3DFSCOutput", help="Name of output 3DFSC map. No file extension required - it will automatically be given a .mrc extension. No paths please.", metavar="FILENAME")
     parser.add_option("--dthetaInDegrees", dest="dthetaInDegrees", action="store", type="float", default=20, help="Angle of cone to be used for 3D FSC sampling in degrees. Default is 20 degrees.", metavar="FLOAT")
