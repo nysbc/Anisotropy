@@ -46,7 +46,7 @@ import click
 # add the programs submodule directory to the path so we can import its files from anywhere
 sys.path.insert(0,os.path.join(os.path.dirname(os.path.abspath(__file__)),'programs'))
 import ThreeDFSC_ReleaseAug2017
-import ThreeDFSC_Analysis_V3
+import ThreeDFSC_Analysis # Version 4.0 Latest
 
 start_time = time.time()
 
@@ -67,13 +67,13 @@ def execute(options):
 	click.echo(click.style("Downloaded from https://github.com/nysbc/Anisotropy"))
 	click.echo(click.style("Published article at http://doi.org/10.1038/nmeth.4347"))
 	click.echo(click.style("Anaconda 3 is required to run this program, and UCSF Chimera to visualize some outputs. Please install them if they are not present."))
-	click.echo(click.style("Please be patient: Program usually finishes in minutes, but can take up to hours to run for extremely large box sizes.\n"))
+	click.echo(click.style("Please be patient: Program usually finishes in minutes, but can take up to hours to run for extremely large box sizes."))
 	
 	# Part 00
 	
 	# Check required inputs
 	if (None in (options.halfmap1, options.halfmap2, options.fullmap, options.apix)):
-			click.echo(click.style("Error: A required input is missing.\n",fg="red"))
+			click.echo(click.style("\nError: A required input is missing.\n",fg="red"))
 			parser.print_help()
 			sys.exit()
 	
@@ -93,7 +93,7 @@ def execute(options):
 			print ("\nMasking performed: " + options.halfmap1[:-4] + "_masked.mrc and " + options.halfmap2[:-4] + "_masked.mrc generated.")
 	# Check half maps
 	if halfmap1 == halfmap2:
-			click.echo(click.style("Error: Both your half maps point to the same file.\n",fg="red"))
+			click.echo(click.style("\nError: Both your half maps point to the same file.\n",fg="red"))
 			sys.exit()
 
 	# Make sure half maps are the same size
@@ -102,13 +102,13 @@ def execute(options):
 	[nxf,nyf,nzf] = h1.shape
 	[nxg,nyg,nzg] = h2.shape
 	if nxf != nxg or nyf != nyg or nzf !=nzg:
-		click.echo(click.style("Error: Half maps are not the same size, check your inputs.\n",fg="red"))
+		click.echo(click.style("\nError: Half maps are not the same size, check your inputs.\n",fg="red"))
 		sys.exit()
 
 	# Part 01
 	
 	if (options.Skip3DFSCGeneration == "False"):
-			click.echo(click.style("Step 01: Generating 3DFSC Volume",fg="blue"))
+			click.echo(click.style("\nStep 01: Generating 3DFSC Volume",fg="blue"))
 			ThreeDFSC_ReleaseAug2017.main(halfmap1,halfmap2,options.ThreeDFSC,options.apix,options.dthetaInDegrees)
 			directory = "Results_" + options.ThreeDFSC
 			if not os.path.exists(directory):
@@ -117,7 +117,7 @@ def execute(options):
 
 			print ("3DFSC Results_" + options.ThreeDFSC + "/" + options.ThreeDFSC + ".mrc generated.")
 	elif (options.Skip3DFSCGeneration == "True"):
-			click.echo(click.style("Step 01: Skipped\n",fg="blue"))
+			click.echo(click.style("\nStep 01: Skipped",fg="blue"))
 			print ("Using pre-existing 3DFSC volume and output files.")
 			if os.path.isfile("Results_" + options.ThreeDFSC + "/ResEM" + options.ThreeDFSC + "OutglobalFSC.csv") == False:
 					click.echo(click.style("Results_" + options.ThreeDFSC + "/ResEM" + options.ThreeDFSC + "OutglobalFSC.csv missing! Please re-run entire 3DFSC program to generate the files needed for analysis.\n",fg="red"))
@@ -128,12 +128,12 @@ def execute(options):
 			else:
 					os.system("cp Results_" + options.ThreeDFSC + "/ResEM" + options.ThreeDFSC + "Out.mrc Results_" + options.ThreeDFSC + "/" + options.ThreeDFSC + ".mrc")
 	else:
-			click.echo(click.style("Please key in either True or False for --Skip3DFSCGeneration option.\n",fg="red"))
+			click.echo(click.style("\nPlease key in either True or False for --Skip3DFSCGeneration option.\n",fg="red"))
 			sys.exit()
 	
 	# Part 02
-	click.echo(click.style("Step 02: Generating Analysis Files",fg="blue"))
-	ThreeDFSC_Analysis_V3.main(halfmap1,halfmap2,fullmap,options.apix,options.ThreeDFSC,options.dthetaInDegrees,options.histogram,options.FSCCutoff,options.ThresholdForSphericity,options.HighPassFilter)
+	click.echo(click.style("\nStep 02: Generating Analysis Files",fg="blue"))
+	ThreeDFSC_Analysis.main(halfmap1,halfmap2,fullmap,options.apix,options.ThreeDFSC,options.dthetaInDegrees,options.histogram,options.FSCCutoff,options.ThresholdForSphericity,options.HighPassFilter)
 	print ("\nDone")
 	print ("Results are in the folder Results_" + str(options.ThreeDFSC))
 	print ("--- %s seconds ---" % (time.time() - start_time))

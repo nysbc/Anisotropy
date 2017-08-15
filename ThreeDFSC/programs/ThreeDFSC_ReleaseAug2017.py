@@ -29,42 +29,10 @@ import numpy as np
 from math import *
 from numba import *
 from numba import autojit
-import copy
 import h5py
-
-import matplotlib
 import matplotlib.pyplot as plt
-
 import mrcfile
-
-## Progress bar, adapted from https://gist.github.com/aubricus/f91fb55dc6ba5557fbab06119420dd6a
-
-def print_progress(iteration, total, prefix='', suffix='', decimals=1):
-	"""
-	Call in a loop to create terminal progress bar
-	@params:
-		iteration	- Required	: current iteration (Int)
-		total		- Required	: total iterations (Int)
-		prefix		- Optional	: prefix string (Str)
-		suffix		- Optional	: suffix string (Str)
-		decimals	- Optional	: positive number of decimals in percent complete (Int)
-		bar_length	- Optional	: character length of bar (Int)
-	"""
-	rows, columns = os.popen('stty size', 'r').read().split()
-	bar_length = int(float(columns)/2)
-	str_format = "{0:." + str(decimals) + "f}"
-	percents = str_format.format(100 * (iteration / float(total)))
-	filled_length = int(round(bar_length * iteration / float(total))) ## adjusted base on window size
-	bar = '=' * filled_length + '-' * (bar_length - filled_length)
-
-	sys.stdout.write('\x1b[2K\r%s |%s| %s%s %s' % (prefix, bar, percents, '%', suffix)),
-
-	if iteration == total:
-		sys.stdout.write('\n')
-	sys.stdout.flush()
-
-
-## Added to mute the print statements
+import click
 
 def blockPrint():
 	sys.stdout = open(os.devnull, 'w')
@@ -450,70 +418,72 @@ def AveragesOnShellsUsingLogicB(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR,kZo
 	n1ofROut[0,0]	= n1ofR[0,0];
 	n2ofROut[0,0]	= n2ofR[0,0];
 	
-	blockdim=(8,8);
-	griddim=(8,8);
+	#blockdim=(8,8);
+	#griddim=(8,8);
+	
+	enablePrint()
+	with click.progressbar(length=RMax+1) as bar:
+		for r in range(1,RMax+1):#range(1,inc+1):
+			#if r!=2: continue
+			#if ((r-1)%5)==0: print(r)
+			NumOnSurf = int(NumAtEachR[r]);
+			#LastInd = NumAtEachR[r]-1 ;
+			kXNow	= kXofR[r][:NumOnSurf]; 
+			kYNow	= kYofR[r][:NumOnSurf]; 
+			kZNow	= kZofR[r][:NumOnSurf];#	 Vectors
+			retNowR = retofRR[r][:NumOnSurf];  
+			retNowI = retofRI[r][:NumOnSurf]; 
+			n1Now	= n1ofR[r][:NumOnSurf]; 
+			n2Now	= n2ofR[r][:NumOnSurf];#   for given 
+			#print(NumOnSurf)
+			#
 
-	for r in range(1,RMax+1):#range(1,inc+1):
-		#if r!=2: continue
-		if ((r-1)%5)==0: print(r)
-		NumOnSurf = int(NumAtEachR[r]);
-		#LastInd = NumAtEachR[r]-1 ;
-		kXNow	= kXofR[r][:NumOnSurf]; 
-		kYNow	= kYofR[r][:NumOnSurf]; 
-		kZNow	= kZofR[r][:NumOnSurf];#	 Vectors
-		retNowR = retofRR[r][:NumOnSurf];  
-		retNowI = retofRI[r][:NumOnSurf]; 
-		n1Now	= n1ofR[r][:NumOnSurf]; 
-		n2Now	= n2ofR[r][:NumOnSurf];#   for given 
-		#print(NumOnSurf)
-		#
-
-		## Progress bar
-		enablePrint()
-		print_progress(r,RMax)
-		blockPrint()
-		##
-		
-		NumLoops=1+int(NumOnSurf*NumOnSurf/NumAtEachRMaxCuda/NumAtEachRMaxCuda);# kicks in at r=50
-		Stride=int(NumOnSurf/NumLoops);
-		startTime = time.time()
-		for jLoop in range(NumLoops):
-
-			Start=jLoop*Stride;
-			End= Start+Stride;
-			if jLoop==(NumLoops-1):
-				End = NumOnSurf;
-			#print("jLoop,Start,End = %g,  %g  %g " %(jLoop,Start,End) )
-			NumAtROutPre = np.zeros((NumOnSurf,End-Start), dtype=np.int)
-			#print("NumAtROutPre.shape %g %g" %(NumAtROutPre.shape))
-			NumAtROutPre = AveragesOnShellsInnerLogicKernelnonCuda(kXNow,kYNow,kZNow, NumOnSurf, Thresh,Start, End);
-			deltaTimeN =time.time()-startTime;
-			# NumAtROutPre created in 6.16 for size r=80
-			# NumAtROutPre created in 88.067775 seconds for size r=128
-			#print("sum, sum of NumAtROutPre = %g " %(np.sum(np.sum(NumAtROutPre,axis=0))));
-			#print("how many zeros of NumAtROutPre = %g " %(len(np.where(NumAtROutPre==0)[0] ) ) );
+			## Progress bar
+			bar.update(r)
+			##
+			
+			NumLoops=1+int(NumOnSurf*NumOnSurf/NumAtEachRMaxCuda/NumAtEachRMaxCuda);# kicks in at r=50
+			Stride=int(NumOnSurf/NumLoops);
 			startTime = time.time()
-			[retofROutRPre, retofROutIPre, n1ofROutPre,n2ofROutPre] = AveragesOnShellsInnerLogicC(retNowR,retNowI,n1Now, n2Now, Start, End,NumAtROutPre)
-			#print("how many zeros of n1ofROutPre = %g " %(len(np.where(n1ofROutPre==0)[0] ) ) );
-			#retofROutRPre = np.dot(NumAtROutPre,retNowR);
-			#retofROutIPre = np.dot(NumAtROutPre,retNowI);
-			#n1ofROutPre = np.dot(NumAtROutPre,n1Now);
-			#n2ofROutPre = np.dot(NumAtROutPre,n2Now);
-			#print("r =%g, jLoop = %g " %(r,jLoop));
-			retofROutR[r][Start:End]  = retofROutRPre;
-			retofROutI[r][Start:End]  = retofROutIPre;
-			n1ofROut[r][Start:End]	  = n1ofROutPre;
-			n2ofROut[r][Start:End]	  = n2ofROutPre;
-			#print(np.min(n2ofROutPre),np.max(n2ofROutPre),)
-			qq= np.sum(NumAtROutPre,axis=0);# length End-Start, 7936
-			NumAtROut[r][Start:End]	  = qq;
-			qqq =np.where(qq==0)[0];
-			#print("how many zeros of MultVec , %g " %(len(qqq) )  );
-		deltaTime =time.time()-startTime;
-		if ((r-1)%5)==0: 
-			print("NumAtROutPre created in %f seconds, retofROutRPre  in %f seconds for size r=%g " \
-				% (deltaTimeN,deltaTime,r))
+			blockPrint()
+			for jLoop in range(NumLoops):
 
+				Start=jLoop*Stride;
+				End= Start+Stride;
+				if jLoop==(NumLoops-1):
+					End = NumOnSurf;
+				#print("jLoop,Start,End = %g,  %g  %g " %(jLoop,Start,End) )
+				NumAtROutPre = np.zeros((NumOnSurf,End-Start), dtype=np.int)
+				#print("NumAtROutPre.shape %g %g" %(NumAtROutPre.shape))
+				NumAtROutPre = AveragesOnShellsInnerLogicKernelnonCuda(kXNow,kYNow,kZNow, NumOnSurf, Thresh,Start, End);
+				deltaTimeN =time.time()-startTime;
+				# NumAtROutPre created in 6.16 for size r=80
+				# NumAtROutPre created in 88.067775 seconds for size r=128
+				#print("sum, sum of NumAtROutPre = %g " %(np.sum(np.sum(NumAtROutPre,axis=0))));
+				#print("how many zeros of NumAtROutPre = %g " %(len(np.where(NumAtROutPre==0)[0] ) ) );
+				startTime = time.time()
+				[retofROutRPre, retofROutIPre, n1ofROutPre,n2ofROutPre] = AveragesOnShellsInnerLogicC(retNowR,retNowI,n1Now, n2Now, Start, End,NumAtROutPre)
+				#print("how many zeros of n1ofROutPre = %g " %(len(np.where(n1ofROutPre==0)[0] ) ) );
+				#retofROutRPre = np.dot(NumAtROutPre,retNowR);
+				#retofROutIPre = np.dot(NumAtROutPre,retNowI);
+				#n1ofROutPre = np.dot(NumAtROutPre,n1Now);
+				#n2ofROutPre = np.dot(NumAtROutPre,n2Now);
+				#print("r =%g, jLoop = %g " %(r,jLoop));
+				retofROutR[r][Start:End]  = retofROutRPre;
+				retofROutI[r][Start:End]  = retofROutIPre;
+				n1ofROut[r][Start:End]	  = n1ofROutPre;
+				n2ofROut[r][Start:End]	  = n2ofROutPre;
+				#print(np.min(n2ofROutPre),np.max(n2ofROutPre),)
+				qq= np.sum(NumAtROutPre,axis=0);# length End-Start, 7936
+				NumAtROut[r][Start:End]	  = qq;
+				#qqq =np.where(qq==0)[0];
+				#print("how many zeros of MultVec , %g " %(len(qqq) )  );
+			deltaTime =time.time()-startTime;
+			#if ((r-1)%5)==0: 
+			#	print("NumAtROutPre created in %f seconds, retofROutRPre  in %f seconds for size r=%g " \
+			#		% (deltaTimeN,deltaTime,r))
+			enablePrint()
+	blockPrint()
 	#print(retofROutRPre)
 	return [retofROutR, retofROutI, n1ofROut,n2ofROut,NumAtROut]
 
@@ -683,7 +653,7 @@ def main(fNHalfMap1,fNHalfMap2,OutputStringLabel,APixels,dthetaInDegrees):
 	#dthetaInDegrees = float(argv[5]);
 	dthetaInRadians = dthetaInDegrees*np.pi/180.0;
 	Thresh = np.cos(dthetaInRadians)   ;
-	fractionOfTheSphereAveraged = (1-Thresh)/2;
+	#fractionOfTheSphereAveraged = (1-Thresh)/2;
 	# Now, deltaTheta takes up a cone which has area
 	#	 2 pi * (1-cos(deltaTheta))
 
@@ -691,10 +661,10 @@ def main(fNHalfMap1,fNHalfMap2,OutputStringLabel,APixels,dthetaInDegrees):
 	FTOut =	 ResultsDir+'FTPlot'+OutputStringLabel;
 	PlotsOut= ResultsDir+'Plots'+OutputStringLabel;
 	fNResRoot=ResEMOutHDF_FN[0:-4]
-	fN_csv_out= fNResRoot+'.csv';
+	#fN_csv_out= fNResRoot+'.csv';
 
-	ResNumOutMRC= fNResRoot+'Num.mrc';# The numerator which is the cross product
-	ResDenOutMRC= fNResRoot+'Den.mrc';# The fn for denominator, which is normalization
+	#ResNumOutMRC= fNResRoot+'Num.mrc';# The numerator which is the cross product
+	#ResDenOutMRC= fNResRoot+'Den.mrc';# The fn for denominator, which is normalization
 
 	resultAveOut = fNResRoot+'globalFSC.csv';
 
@@ -1008,7 +978,7 @@ def main(fNHalfMap1,fNHalfMap2,OutputStringLabel,APixels,dthetaInDegrees):
 	NumAtEachRMax	  =	 NumAtEachR[RMax];
 	NumAtEachRMaxCuda = 15871;# NumAtEachR[50];#15871
 
-	MaxLoopsIllNeed = NumAtEachRMax*NumAtEachRMax/NumAtEachRMaxCuda/NumAtEachRMaxCuda;
+	#MaxLoopsIllNeed = NumAtEachRMax*NumAtEachRMax/NumAtEachRMaxCuda/NumAtEachRMaxCuda;
 
 	# kXofR,kYofR, kZofR
 	# retofRR,retofRI

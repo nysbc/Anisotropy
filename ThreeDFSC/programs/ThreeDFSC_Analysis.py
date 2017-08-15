@@ -22,8 +22,9 @@
 ### 1.0 - Created analysis program
 ### 2.0 - Combined with plotting, thresholding and sphericity
 ### 3.0 - New thresholding algorithm that scales better with large box sizes
+### 4.0 - Used click
 ### ============================
-version = "3.0"
+version = "4.0"
 
 #pythonlib
 import matplotlib
@@ -33,39 +34,13 @@ import numpy as np
 import mrcfile
 import sys
 import copy
+import click
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import matplotlib.lines as mlines
 from math import sqrt, acos, atan2, cos, sin, pi
 from skimage import measure
 from scipy.ndimage.filters import gaussian_filter
-
-## Progress bar, adapted from https://gist.github.com/aubricus/f91fb55dc6ba5557fbab06119420dd6a
-
-def print_progress(iteration, total, prefix='', suffix='', decimals=1):
-	"""
-	Call in a loop to create terminal progress bar
-	@params:
-		iteration	- Required	: current iteration (Int)
-		total		- Required	: total iterations (Int)
-		prefix		- Optional	: prefix string (Str)
-		suffix		- Optional	: suffix string (Str)
-		decimals	- Optional	: positive number of decimals in percent complete (Int)
-		bar_length	- Optional	: character length of bar (Int)
-	"""
-	
-	rows, columns = os.popen('stty size', 'r').read().split()
-	bar_length = int(float(columns)/2)
-	str_format = "{0:." + str(decimals) + "f}"
-	percents = str_format.format(100 * (iteration / float(total)))
-	filled_length = int(round(bar_length * iteration / float(total))) ## adjusted base on window size
-	bar = '=' * filled_length + '-' * (bar_length - filled_length)
-
-	sys.stdout.write('\x1b[2K\r%s |%s| %s%s %s' % (prefix, bar, percents, '%', suffix)),
-
-	#if iteration == total:
-	#	sys.stdout.write('\n')
-	sys.stdout.flush()
 
 def cartesian_to_spherical(vector):
 	"""Convert the Cartesian vector [x, y, z] to spherical coordinates [r, theta, phi].
@@ -132,7 +107,9 @@ def Mean(input):
 	return mean
 	
 def convert_highpassfilter_to_Fourier_Shells(ThreeDFSC,apix,highpassfilter):
-
+	""" Convert high pass filter variable in Angstrom to n-th Fourier shell
+	"""
+	
 	a = open("Results_" + ThreeDFSC + "/ResEM" + ThreeDFSC + "OutglobalFSC.csv","r")
 	b = a.readlines()
 	b.pop(0)
@@ -170,7 +147,6 @@ def threshold_binarize(inmrc, thresholded, thresholdedbinarized, FSCCutoff, Thre
 	
 	# Coordinates
 	center = (inputmrc.shape[0]/2,inputmrc.shape[1]/2,inputmrc.shape[2]/2)
-	radius = int(inputmrc.shape[0]/2 + 0.5)
 		
 	# Fill up new np array
 	boxsize = inputmrc.shape[0]
@@ -179,14 +155,13 @@ def threshold_binarize(inmrc, thresholded, thresholdedbinarized, FSCCutoff, Thre
 	
 	# Find distance of all points to center
 	points_array = []
-	for i in range(boxsize):
-		for j in range(boxsize):
-			for k in range(boxsize):
-				dist = calculate_distance((i,j,k),center)
-				points_array.append([dist,i,j,k])
-				
-		print_progress(int(i)+1,int(boxsize))
-	sys.stdout.write('\n') # Flush progress bar
+	with click.progressbar(length=boxsize) as bar:
+		for i in range(boxsize):
+			bar.update(i)
+			for j in range(boxsize):
+				for k in range(boxsize):
+					dist = calculate_distance((i,j,k),center)
+					points_array.append([dist,i,j,k])
 		
 	# Sort array
 	points_array.sort()
@@ -200,85 +175,84 @@ def threshold_binarize(inmrc, thresholded, thresholdedbinarized, FSCCutoff, Thre
 	memory_inmrc_thresholded = np.copy(inputmrc)
 	memory_inmrc_thresholdedbinarized = np.copy(inputmrc)
 	
-	for i in points_array:
-		x = i[1]
-		y = i[2]
-		z = i[3]
-		
-		if i[0] < highpassfilter: # Implement high pass filter
-			outarraythresholded[x][y][z] = inputmrc[x][y][z]
-			outarraythresholdedbinarized[x][y][z] = 1
-			memory_inmrc_thresholded[x][y][z] = 1
-			memory_inmrc_thresholdedbinarized[x][y][z] = 1			
-		
-		elif memory_inmrc_thresholded[x][y][z] < min_cutoff: # If value is smaller than the lowest cutoff, skip the calculations below to speed things up
-			outarraythresholded[x][y][z] = 0
-			outarraythresholdedbinarized[x][y][z] = 0
-			memory_inmrc_thresholded[x][y][z] = 0
-			memory_inmrc_thresholdedbinarized[x][y][z] = 0
-		
-		else:
-			twentysix_neighboring_points = [[calculate_distance((x-1,y,z),center),x-1,y,z]]
-			twentysix_neighboring_points.append([calculate_distance((x,y-1,z),center),x,y-1,z])
-			twentysix_neighboring_points.append([calculate_distance((x,y,z-1),center),x,y,z-1])
-			twentysix_neighboring_points.append([calculate_distance((x-1,y-1,z),center),x-1,y-1,z])
-			twentysix_neighboring_points.append([calculate_distance((x-1,y,z-1),center),x-1,y,z-1])
-			twentysix_neighboring_points.append([calculate_distance((x,y-1,z-1),center),x,y-1,z-1])
-			twentysix_neighboring_points.append([calculate_distance((x-1,y-1,z-1),center),x-1,y-1,z-1])
+	with click.progressbar(length=int(total_iterations)) as bar:
+		for i in points_array:
+			x = i[1]
+			y = i[2]
+			z = i[3]
 			
-			twentysix_neighboring_points.append([calculate_distance((x+1,y,z),center),x+1,y,z])
-			twentysix_neighboring_points.append([calculate_distance((x,y+1,z),center),x,y+1,z])
-			twentysix_neighboring_points.append([calculate_distance((x,y,z+1),center),x,y,z+1])
-			twentysix_neighboring_points.append([calculate_distance((x+1,y+1,z),center),x+1,y+1,z])
-			twentysix_neighboring_points.append([calculate_distance((x+1,y,z+1),center),x+1,y,z+1])
-			twentysix_neighboring_points.append([calculate_distance((x,y+1,z+1),center),x,y+1,z+1])
-			twentysix_neighboring_points.append([calculate_distance((x+1,y+1,z+1),center),x+1,y+1,z+1])
-			
-			twentysix_neighboring_points.append([calculate_distance((x+1,y-1,z),center),x+1,y-1,z])
-			twentysix_neighboring_points.append([calculate_distance((x+1,y,z-1),center),x+1,y,z-1])
-			twentysix_neighboring_points.append([calculate_distance((x+1,y-1,z-1),center),x+1,y-1,z-1])
-			twentysix_neighboring_points.append([calculate_distance((x-1,y+1,z),center),x-1,y+1,z])
-			twentysix_neighboring_points.append([calculate_distance((x,y+1,z-1),center),x,y+1,z-1])
-			twentysix_neighboring_points.append([calculate_distance((x-1,y+1,z-1),center),x-1,y+1,z-1])
-			twentysix_neighboring_points.append([calculate_distance((x-1,y,z+1),center),x-1,y,z+1])
-			twentysix_neighboring_points.append([calculate_distance((x,y-1,z+1),center),x,y-1,z+1])
-			twentysix_neighboring_points.append([calculate_distance((x-1,y-1,z+1),center),x-1,y-1,z+1])
-			
-			twentysix_neighboring_points.append([calculate_distance((x+1,y+1,z-1),center),x+1,y+1,z-1])
-			twentysix_neighboring_points.append([calculate_distance((x+1,y-1,z+1),center),x+1,y-1,z+1])
-			twentysix_neighboring_points.append([calculate_distance((x-1,y+1,z+1),center),x-1,y+1,z+1])
-			
-			twentysix_neighboring_points.sort()
-			
-			#Closest point to center
-			closest_x = twentysix_neighboring_points[0][1]
-			closest_y = twentysix_neighboring_points[0][2]
-			closest_z = twentysix_neighboring_points[0][3]
-			
-			if memory_inmrc_thresholded[x][y][z] < cutoff_fsc:
-				outarraythresholded[x][y][z] = 0
-				memory_inmrc_thresholded[x][y][z] = 0			
-			elif memory_inmrc_thresholded[closest_x][closest_y][closest_z] < cutoff_fsc:
-				outarraythresholded[x][y][z] = 0
-				memory_inmrc_thresholded[x][y][z] = 0
-			else:
+			if i[0] < highpassfilter: # Implement high pass filter
 				outarraythresholded[x][y][z] = inputmrc[x][y][z]
+				outarraythresholdedbinarized[x][y][z] = 1
+				memory_inmrc_thresholded[x][y][z] = 1
+				memory_inmrc_thresholdedbinarized[x][y][z] = 1			
 			
-			if memory_inmrc_thresholdedbinarized[x][y][z] < cutoff_binarize:
+			elif memory_inmrc_thresholded[x][y][z] < min_cutoff: # If value is smaller than the lowest cutoff, skip the calculations below to speed things up
+				outarraythresholded[x][y][z] = 0
 				outarraythresholdedbinarized[x][y][z] = 0
-				memory_inmrc_thresholdedbinarized[x][y][z] = 0			
-			elif memory_inmrc_thresholdedbinarized[closest_x][closest_y][closest_z] < cutoff_binarize:
-				outarraythresholdedbinarized[x][y][z] = 0
+				memory_inmrc_thresholded[x][y][z] = 0
 				memory_inmrc_thresholdedbinarized[x][y][z] = 0
-			else:
-				outarraythresholdedbinarized[x][y][z] = 1			
 			
+			else:
+				twentysix_neighboring_points = [[calculate_distance((x-1,y,z),center),x-1,y,z]]
+				twentysix_neighboring_points.append([calculate_distance((x,y-1,z),center),x,y-1,z])
+				twentysix_neighboring_points.append([calculate_distance((x,y,z-1),center),x,y,z-1])
+				twentysix_neighboring_points.append([calculate_distance((x-1,y-1,z),center),x-1,y-1,z])
+				twentysix_neighboring_points.append([calculate_distance((x-1,y,z-1),center),x-1,y,z-1])
+				twentysix_neighboring_points.append([calculate_distance((x,y-1,z-1),center),x,y-1,z-1])
+				twentysix_neighboring_points.append([calculate_distance((x-1,y-1,z-1),center),x-1,y-1,z-1])
+				
+				twentysix_neighboring_points.append([calculate_distance((x+1,y,z),center),x+1,y,z])
+				twentysix_neighboring_points.append([calculate_distance((x,y+1,z),center),x,y+1,z])
+				twentysix_neighboring_points.append([calculate_distance((x,y,z+1),center),x,y,z+1])
+				twentysix_neighboring_points.append([calculate_distance((x+1,y+1,z),center),x+1,y+1,z])
+				twentysix_neighboring_points.append([calculate_distance((x+1,y,z+1),center),x+1,y,z+1])
+				twentysix_neighboring_points.append([calculate_distance((x,y+1,z+1),center),x,y+1,z+1])
+				twentysix_neighboring_points.append([calculate_distance((x+1,y+1,z+1),center),x+1,y+1,z+1])
+				
+				twentysix_neighboring_points.append([calculate_distance((x+1,y-1,z),center),x+1,y-1,z])
+				twentysix_neighboring_points.append([calculate_distance((x+1,y,z-1),center),x+1,y,z-1])
+				twentysix_neighboring_points.append([calculate_distance((x+1,y-1,z-1),center),x+1,y-1,z-1])
+				twentysix_neighboring_points.append([calculate_distance((x-1,y+1,z),center),x-1,y+1,z])
+				twentysix_neighboring_points.append([calculate_distance((x,y+1,z-1),center),x,y+1,z-1])
+				twentysix_neighboring_points.append([calculate_distance((x-1,y+1,z-1),center),x-1,y+1,z-1])
+				twentysix_neighboring_points.append([calculate_distance((x-1,y,z+1),center),x-1,y,z+1])
+				twentysix_neighboring_points.append([calculate_distance((x,y-1,z+1),center),x,y-1,z+1])
+				twentysix_neighboring_points.append([calculate_distance((x-1,y-1,z+1),center),x-1,y-1,z+1])
+				
+				twentysix_neighboring_points.append([calculate_distance((x+1,y+1,z-1),center),x+1,y+1,z-1])
+				twentysix_neighboring_points.append([calculate_distance((x+1,y-1,z+1),center),x+1,y-1,z+1])
+				twentysix_neighboring_points.append([calculate_distance((x-1,y+1,z+1),center),x-1,y+1,z+1])
+				
+				twentysix_neighboring_points.sort()
+				
+				#Closest point to center
+				closest_x = twentysix_neighboring_points[0][1]
+				closest_y = twentysix_neighboring_points[0][2]
+				closest_z = twentysix_neighboring_points[0][3]
+				
+				if memory_inmrc_thresholded[x][y][z] < cutoff_fsc:
+					outarraythresholded[x][y][z] = 0
+					memory_inmrc_thresholded[x][y][z] = 0			
+				elif memory_inmrc_thresholded[closest_x][closest_y][closest_z] < cutoff_fsc:
+					outarraythresholded[x][y][z] = 0
+					memory_inmrc_thresholded[x][y][z] = 0
+				else:
+					outarraythresholded[x][y][z] = inputmrc[x][y][z]
+				
+				if memory_inmrc_thresholdedbinarized[x][y][z] < cutoff_binarize:
+					outarraythresholdedbinarized[x][y][z] = 0
+					memory_inmrc_thresholdedbinarized[x][y][z] = 0			
+				elif memory_inmrc_thresholdedbinarized[closest_x][closest_y][closest_z] < cutoff_binarize:
+					outarraythresholdedbinarized[x][y][z] = 0
+					memory_inmrc_thresholdedbinarized[x][y][z] = 0
+				else:
+					outarraythresholdedbinarized[x][y][z] = 1			
+				
 
-		counter += 1
-		if counter % iterations_per_progress_bar_update == 0:
-			print_progress(counter+1,int(total_iterations))
-	
-	sys.stdout.write('\n') # Flush progress bar
+			counter += 1
+			if counter % iterations_per_progress_bar_update == 0:
+				bar.update(counter+1)
 	
 	mrc_write = mrcfile.new(thresholded,overwrite=True)
 	mrc_write.set_data(outarraythresholded.astype('<f4'))
@@ -329,8 +303,6 @@ def histogram_sample(inmrc, highpassfilter):
 		
 	# fill up new numpy array
 	boxsize = inputmrc.shape[0]
-	outarray = np.zeros((boxsize,)*3)
-	outarray2 = np.zeros((boxsize,)*3)
 	
 	histogram_sampling = np.empty([radius,10*10]) # write out the histogram 1D FSCs
 	counter = 0
@@ -338,7 +310,6 @@ def histogram_sample(inmrc, highpassfilter):
 	for theta in np.arange(1,360,36):
 		#print("theta: %d" % (theta))
 		for phi in np.arange(1,360,36):
-			setrest = False
 			for r in range(radius):
 				
 				# convert polar to cartesian and read mrc
@@ -351,7 +322,6 @@ def histogram_sample(inmrc, highpassfilter):
 				z = int(cart_vect_new[2])
 				
 				# binarize
-				# if setrest is True, everything beyond this radius value should be 0
 				if (r > int(highpassfilter)):
 					histogram_sampling[r][counter] = inputmrc[x][y][z]
 				else:
@@ -393,10 +363,10 @@ def HistogramCreation(histogram_sampling,histogram,ThreeDFSC,apix,cutoff,spheric
 	## Calculate Sum of Standard Deviation
 	## http://stats.stackexchange.com/questions/25848/how-to-sum-a-standard-deviation
 	
-	sumofvar = 0
-	for a in stddev:
-		sumofvar += a ** 2
-	sumofstd = sqrt(sumofvar)
+	# sumofvar = 0
+	# for a in stddev:
+		# sumofvar += a ** 2
+	# sumofstd = sqrt(sumofvar)
 	
 	#print ("\n\n")
 	#print ("Sum of Standard Deviation is %s" % sumofstd)
@@ -463,7 +433,7 @@ def ChimeraOutputCreate(ThreeDFSC,apix,maxRes,minRes,fullmap,globalspatialfreque
 	
 	## Generate Lineplot.py File		
 
-	with open(os.path.realpath(__file__)[:-24] + "Chimera/lineplot_template.py") as f:
+	with open(os.path.realpath(__file__)[:-21] + "Chimera/lineplot_template.py") as f:
 		replaced1 = f.read().replace("#==apix==#", str(apix))
 		replaced2 = replaced1.replace("#==maxres==#", str(maxRes))
 		replaced3 = replaced2.replace("#==minres==#", str(minRes))
@@ -486,7 +456,7 @@ def ChimeraOutputCreate(ThreeDFSC,apix,maxRes,minRes,fullmap,globalspatialfreque
 	
 	## 3DFSCPlot_Chimera.cmd File
 
-	with open(os.path.realpath(__file__)[:-24] + "Chimera/3DFSCPlot_Chimera_Template.cmd") as f:
+	with open(os.path.realpath(__file__)[:-21] + "Chimera/3DFSCPlot_Chimera_Template.cmd") as f:
 		replaced1 = f.read().replace("#===3DFSC====#", str(os.path.basename(ThreeDFSC)) + ".mrc")
 		replaced2 = replaced1.replace("#==apix==#", str(apix))
 		replaced3 = replaced2.replace("#==Origin3DFSC==#", str(center3DFSC))
@@ -523,11 +493,11 @@ def check_globalFSC(ThreeDFSC,apix):
 			total_shells_past_first_pt143 += 1
 	
 	if (shells_below_pt143 == 0):
-		print ("\n\033[1;31;40mWarning: Your global half-map FSC does not fall below 0.143. You may have reached the Nyquist sampling limit. Try unbinning your data. \033[0;37;40m")
+		click.echo(click.style("Warning: Your global half-map FSC does not fall below 0.143. You may have reached the Nyquist sampling limit. Try unbinning your data.\n",fg="red"))
 		resolution_below_pt143.append(apix)
 
 	if (shells_below_pt143 != total_shells_past_first_pt143):
-		print ("\n\033[1;31;40mWarning: Your global half-map FSC rises above 0.143 after the first crossing. Check your refinement and masking. \033[0;37;40m")
+		click.echo(click.style("Warning: Your global half-map FSC rises above 0.143 after the first crossing. Check your refinement and masking.\n",fg="red"))
 	
 	return resolution_below_pt143[0] ## Returns global resolution
 	
@@ -537,25 +507,25 @@ def main(halfmap1,halfmap2,fullmap,apix,ThreeDFSC,dthetaInDegrees,histogram,FSCC
 	global_resolution = check_globalFSC(ThreeDFSC,apix)
 
 	# Part 01
-	print ("\n\033[1;34;40mAnalysis Step 01: Generating thresholded and thresholded + binarized maps. \033[0;37;40m")
+	click.echo(click.style("\nAnalysis Step 01: Generating thresholded and thresholded + binarized maps",fg="blue"))
 	print ("These maps can be used to make figures, and are required for calculating sphericity.")
 	FourierShellHighPassFilter = convert_highpassfilter_to_Fourier_Shells(ThreeDFSC,apix,HighPassFilter)
-	#threshold_binarize("Results_" + ThreeDFSC + "/ResEM" + ThreeDFSC + "Out.mrc", "Results_" + ThreeDFSC + "/" + ThreeDFSC + "_Thresholded.mrc", "Results_" + ThreeDFSC + "/" + ThreeDFSC + "_ThresholdedBinarized.mrc", FSCCutoff, ThresholdForSphericity,FourierShellHighPassFilter,apix)
+	threshold_binarize("Results_" + ThreeDFSC + "/ResEM" + ThreeDFSC + "Out.mrc", "Results_" + ThreeDFSC + "/" + ThreeDFSC + "_Thresholded.mrc", "Results_" + ThreeDFSC + "/" + ThreeDFSC + "_ThresholdedBinarized.mrc", FSCCutoff, ThresholdForSphericity,FourierShellHighPassFilter,apix)
 	print ("Results_" + ThreeDFSC + "/" + ThreeDFSC + "_Thresholded.mrc at " + str(FSCCutoff) + " cutoff and Results_" + ThreeDFSC + "/" + ThreeDFSC + "_ThresholdedBinarized.mrc at " + str(ThresholdForSphericity) + " cutoff for sphericity generated.")
 	# Part 02
-	print ("\n\033[1;34;40mAnalysis Step 02: Calculating sphericity. \033[0;37;40m")
+	click.echo(click.style("\nAnalysis Step 02: Calculating sphericity",fg="blue"))
 	sphericity = calculate_sphericity("Results_" + ThreeDFSC + "/" + ThreeDFSC + "_ThresholdedBinarized.mrc")
 	if sphericity > 1.0: 
-		print ("\n\033[1;31;40mWarning: sphericity is >1. This problem usually has to do with input half maps. Please check your inputs. \033[0;37;40m")
+		click.echo(click.style("\nWarning: sphericity is >1. This problem usually has to do with input half maps. Please check your inputs.\n",fg="red"))
 	print ("Sphericity is %0.2f out of 1. 1 represents a perfect sphere." % (sphericity))
 	# Part 03
-	print ("\n\033[1;34;40mAnalysis Step 03: Generating Histogram. \033[0;37;40m")
+	click.echo(click.style("\nAnalysis Step 03: Generating Histogram",fg="blue"))
 	histogram_sampling = histogram_sample("Results_" + ThreeDFSC + "/ResEM" + ThreeDFSC + "Out.mrc",FourierShellHighPassFilter)
 	# Part 04
 	maxRes, minRes, globalspatialfrequency, globalfsc = HistogramCreation(histogram_sampling,histogram,ThreeDFSC,apix,FSCCutoff,sphericity,global_resolution)
 	print ("Results_" + ThreeDFSC + "/" + histogram + ".pdf generated.")
 	# Part 05
-	print ("\n\033[1;34;40mAnalysis Step 04: Generating Output Files for Chimera Viewing of 3DFSC \033[0;37;40m")
+	click.echo(click.style("\nAnalysis Step 04: Generating Output Files for Chimera Viewing of 3DFSC",fg="blue"))
 	os.system("mkdir Results_" + str(ThreeDFSC) + "/Chimera")
 	os.system("cp Results_" + str(ThreeDFSC) + "/" + str(ThreeDFSC) + ".mrc " + " Results_" + str(ThreeDFSC) + "/Chimera/")
 	os.system("cp " + fullmap + " Results_" + str(ThreeDFSC) + "/Chimera/")
