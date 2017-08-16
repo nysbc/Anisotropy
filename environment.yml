@@ -57,5 +57,6 @@ dependencies:
   - mrcfile==1.0.0
   - scikit-learn==0.18.2
   - click==6.7
+  - colorama==0.3.9
 prefix: /home/cnegro/anaconda3/envs/fsc
 

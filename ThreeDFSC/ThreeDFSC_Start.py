@@ -69,7 +69,7 @@ def execute(options):
 	click.echo(click.style("Anaconda 3 is required to run this program, and UCSF Chimera to visualize some outputs. Please install them if they are not present."))
 	click.echo(click.style("Please be patient: Program usually finishes in minutes, but can take up to hours to run for extremely large box sizes."))
 	
-	# Part 00
+	# Part 00: Check and Administration
 	
 	# Check required inputs
 	if (None in (options.halfmap1, options.halfmap2, options.fullmap, options.apix)):
@@ -91,7 +91,8 @@ def execute(options):
 			halfmap1 = masking(options.halfmap1,mask,options.halfmap1[:-4] + "_masked.mrc")
 			halfmap2 = masking(options.halfmap2,mask,options.halfmap2[:-4] + "_masked.mrc")
 			print ("\nMasking performed: " + options.halfmap1[:-4] + "_masked.mrc and " + options.halfmap2[:-4] + "_masked.mrc generated.")
-	# Check half maps
+	
+	# Check half maps are unique
 	if halfmap1 == halfmap2:
 			click.echo(click.style("\nError: Both your half maps point to the same file.\n",fg="red"))
 			sys.exit()
@@ -104,9 +105,13 @@ def execute(options):
 	if nxf != nxg or nyf != nyg or nzf !=nzg:
 		click.echo(click.style("\nError: Half maps are not the same size, check your inputs.\n",fg="red"))
 		sys.exit()
+		
+	# Check numThresholdsForSphericityCalcs is bigger than 0
+	if options.numThresholdsForSphericityCalcs < 1:
+		click.echo(click.style("\nError: Please key in a positive integer for the --numThresholdsForSphericityCalcs option.\n",fg="red"))
+		sys.exit()
 
 	# Part 01
-	
 	if (options.Skip3DFSCGeneration == "False"):
 			click.echo(click.style("\nStep 01: Generating 3DFSC Volume",fg="blue"))
 			ThreeDFSC_ReleaseAug2017.main(halfmap1,halfmap2,options.ThreeDFSC,options.apix,options.dthetaInDegrees)
@@ -157,7 +162,7 @@ if __name__ == '__main__':
     parser.add_option("--histogram", dest="histogram", action="store", type="string", default="histogram", help="Name of output histogram graph. No file extension required - it will automatically be given a .pdf extension. No paths please.", metavar="FILENAME")
     parser.add_option("--FSCCutoff", dest="FSCCutoff", action="store", type="float", default=0.143, help="FSC cutoff criterion. 0.143 is default.", metavar="FLOAT")
     parser.add_option("--ThresholdForSphericity", dest="ThresholdForSphericity", action="store", type="float", default=0.5, help="Threshold value for 3DFSC volume for calculating sphericity. 0.5 is default.", metavar="FLOAT")
-    parser.add_option("--HighPassFilter", dest="HighPassFilter", action="store", type="float", default=150.0, help="High pass filter for thresholding in Angstrom. Prevents small dips in directional FSCs at low spatial frequency due to noise from messing up the thresholding step. Decrease if you see a huge wedge missing from your thresholded 3DFSC volume. 150 Angstroms is default.", metavar="FLOAT")
+    parser.add_option("--HighPassFilter", dest="HighPassFilter", action="store", type="float", default=200.0, help="High pass filter for thresholding in Angstrom. Prevents small dips in directional FSCs at low spatial frequency due to noise from messing up the thresholding step. Decrease if you see a huge wedge missing from your thresholded 3DFSC volume. 200 Angstroms is default.", metavar="FLOAT")
     parser.add_option("--Skip3DFSCGeneration", dest="Skip3DFSCGeneration", action="store", type="string", default="False", help="Allows for skipping of 3DFSC generation to directly run the analysis on a previously generated set of results.", metavar="True or False")
     parser.add_option("--numThresholdsForSphericityCalcs", dest="numThresholdsForSphericityCalcs", action="store", type="int", default=0, help="calculate sphericities at different threshold cutoffs to determine sphericity deviation across spatial frequencies. This can be useful to evaluate possible effects of overfitting or improperly assigned orientations.", metavar="INT")
 

@@ -18,3 +18,4 @@ scikit-learn==0.18.2
 scipy==0.19.1
 six==1.10.0
 click==6.7
+colorama==0.3.9

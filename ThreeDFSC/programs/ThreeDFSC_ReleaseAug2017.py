@@ -422,8 +422,9 @@ def AveragesOnShellsUsingLogicB(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR,kZo
 	#griddim=(8,8);
 	
 	enablePrint()
-	with click.progressbar(length=RMax+1) as bar:
-		for r in range(1,RMax+1):#range(1,inc+1):
+	with click.progressbar(length=((RMax)**3)) as bar:
+		for r in range(1,RMax+1):
+			#range(1,inc+1):
 			#if r!=2: continue
 			#if ((r-1)%5)==0: print(r)
 			NumOnSurf = int(NumAtEachR[r]);
@@ -439,13 +440,13 @@ def AveragesOnShellsUsingLogicB(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR,kZo
 			#
 
 			## Progress bar
-			bar.update(r)
+			bar.update((r**3)-((r-1)**3))
 			##
 			
 			NumLoops=1+int(NumOnSurf*NumOnSurf/NumAtEachRMaxCuda/NumAtEachRMaxCuda);# kicks in at r=50
 			Stride=int(NumOnSurf/NumLoops);
 			startTime = time.time()
-			blockPrint()
+			#blockPrint()
 			for jLoop in range(NumLoops):
 
 				Start=jLoop*Stride;
@@ -482,7 +483,7 @@ def AveragesOnShellsUsingLogicB(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR,kZo
 			#if ((r-1)%5)==0: 
 			#	print("NumAtROutPre created in %f seconds, retofROutRPre  in %f seconds for size r=%g " \
 			#		% (deltaTimeN,deltaTime,r))
-			enablePrint()
+			#enablePrint()
 	blockPrint()
 	#print(retofROutRPre)
 	return [retofROutR, retofROutI, n1ofROut,n2ofROut,NumAtROut]
