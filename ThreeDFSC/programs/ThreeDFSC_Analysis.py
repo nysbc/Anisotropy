@@ -568,7 +568,7 @@ def main(halfmap1,halfmap2,fullmap,apix,ThreeDFSC,dthetaInDegrees,histogram,FSCC
 		thresh_ranges = calc_threshold_ranges(numThresholdsForSphericityCalcs, FSCCutoff)
 		sphericities_output = []
 		for thresh in thresh_ranges:
-			print ("calculating sphericity at threshold %.2f" % (thresh))
+			print ("Calculating sphericity at threshold %.2f" % (thresh))
 			threedfsc_array = mrcfile.open("Results_" + ThreeDFSC + "/ResEM" + ThreeDFSC + "Out.mrc").data
 			threedfsc_array_thresholded, threedfsc_array_thresholded_binarized = threshold_binarize_array(threedfsc_array, FSCCutoff, thresh, FourierShellHighPassFilter, apix)
 			sphericity = calculate_sphericity_array(threedfsc_array_thresholded_binarized)
@@ -578,15 +578,14 @@ def main(halfmap1,halfmap2,fullmap,apix,ThreeDFSC,dthetaInDegrees,histogram,FSCC
 			print ("Sphericity is %0.2f out of 1 at threshold %0.2f. 1 represents a perfect sphere." % (sphericity, thresh))
 		dev = np.std(sphericities_output)
 		if dev < 0.02:  
-			click.echo(click.style("\nSphericity deviation is low: %.2f" % (np.std(sphericities_output)), fg="green", bold=True))
+			click.echo(click.style("\nSphericity deviation is low: %.2f." % (np.std(sphericities_output)), fg="green", bold=True))
 		elif dev >= 0.02 < 0.04:
-			click.echo(click.style("\nSphericity deviation is ok: %.2f" % (np.std(sphericities_output)), fg="yellow", bold=True))
+			click.echo(click.style("\nSphericity deviation is okay: %.2f." % (np.std(sphericities_output)), fg="yellow", bold=True))
 		else:
-			click.echo(click.style("\nSphericity deviation is high: %.2f. Density might be more anisotropic than normal, check your 3DFSC mrc output" % (np.std(sphericities_output)), fg="red", bold=True))
+			click.echo(click.style("\nSphericity deviation is high: %.2f. Density might be more anisotropic than normal, check your 3DFSC mrc output." % (np.std(sphericities_output)), fg="red", bold=True))
 		with open("Results_" + str(ThreeDFSC) + "/sphericities_across_thresholds.txt", "w") as f:
 			for i in range(len(thresh_ranges)):
 				f.write("%.3f %.3f\n" % (thresh_ranges[i], sphericities_output[i]))
-		
 		
 if __name__ == '__main__':
 	main(sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4],sys.argv[5],sys.argv[6],sys.argv[7],sys.argv[8],sys.argv[9],sys.argv[10],sys.argv[11])
