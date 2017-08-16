@@ -135,21 +135,41 @@ def convert_highpassfilter_to_Fourier_Shells(ThreeDFSC,apix,highpassfilter):
 def calculate_distance(p1,p2):
     return sqrt((p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2 + (p2[2] - p1[2]) ** 2)	
 
-def threshold_binarize(inmrc, thresholded, thresholdedbinarized, FSCCutoff, ThresholdForSphericity, highpassfilter, apix):
+def threshold_binarize_mrc(inmrc, thresholded, thresholdedbinarized, FSCCutoff, ThresholdForSphericity, highpassfilter, apix):
+	# inmrc, thresholded, and thresholdedbinarized are paths to .mrc files
+
+	# Read MRC
+	inputmrc = (mrcfile.open(inmrc)).data
+	
+	# binarize array
+	outarraythresholded, outarraythresholdedbinarized = threshold_binarize_array(inputmrc, FSCCutoff, ThresholdForSphericity, highpassfilter, apix)
+	
+	# write mrc file
+	mrc_write = mrcfile.new(thresholded,overwrite=True)
+	mrc_write.set_data(outarraythresholded.astype('<f4'))
+	mrc_write.voxel_size = (float(apix),float(apix),float(apix))
+	mrc_write.update_header_from_data()
+	mrc_write.close()
+			
+	mrc_write = mrcfile.new(thresholdedbinarized,overwrite=True)
+	mrc_write.set_data(outarraythresholdedbinarized.astype('<f4'))
+	mrc_write.voxel_size = (float(apix),float(apix),float(apix))
+	mrc_write.update_header_from_data()
+	mrc_write.close()	
+	
+	
+def threshold_binarize_array(dataarray, FSCCutoff, ThresholdForSphericity, highpassfilter, apix):
 
 	# Thresholds
 	cutoff_fsc = float(FSCCutoff)
 	cutoff_binarize = float(ThresholdForSphericity)
 	min_cutoff = min(cutoff_fsc,cutoff_binarize)
-
-	# Read MRC
-	inputmrc = (mrcfile.open(inmrc)).data
 	
 	# Coordinates
-	center = (inputmrc.shape[0]/2,inputmrc.shape[1]/2,inputmrc.shape[2]/2)
+	center = (dataarray.shape[0]/2,dataarray.shape[1]/2,dataarray.shape[2]/2)
 		
 	# Fill up new np array
-	boxsize = inputmrc.shape[0]
+	boxsize = dataarray.shape[0]
 	outarraythresholded = np.zeros((boxsize,)*3)
 	outarraythresholdedbinarized = np.zeros((boxsize,)*3)
 	
@@ -172,8 +192,8 @@ def threshold_binarize(inmrc, thresholded, thresholdedbinarized, FSCCutoff, Thre
 	number_of_progress_bar_updates = 200
 	iterations_per_progress_bar_update = int(total_iterations/number_of_progress_bar_updates)
 	
-	memory_inmrc_thresholded = np.copy(inputmrc)
-	memory_inmrc_thresholdedbinarized = np.copy(inputmrc)
+	memory_inmrc_thresholded = np.copy(dataarray)
+	memory_inmrc_thresholdedbinarized = np.copy(dataarray)
 	
 	with click.progressbar(length=int(total_iterations)) as bar:
 		for i in points_array:
@@ -182,7 +202,7 @@ def threshold_binarize(inmrc, thresholded, thresholdedbinarized, FSCCutoff, Thre
 			z = i[3]
 			
 			if i[0] < highpassfilter: # Implement high pass filter
-				outarraythresholded[x][y][z] = inputmrc[x][y][z]
+				outarraythresholded[x][y][z] = dataarray[x][y][z]
 				outarraythresholdedbinarized[x][y][z] = 1
 				memory_inmrc_thresholded[x][y][z] = 1
 				memory_inmrc_thresholdedbinarized[x][y][z] = 1			
@@ -238,7 +258,7 @@ def threshold_binarize(inmrc, thresholded, thresholdedbinarized, FSCCutoff, Thre
 					outarraythresholded[x][y][z] = 0
 					memory_inmrc_thresholded[x][y][z] = 0
 				else:
-					outarraythresholded[x][y][z] = inputmrc[x][y][z]
+					outarraythresholded[x][y][z] = dataarray[x][y][z]
 				
 				if memory_inmrc_thresholdedbinarized[x][y][z] < cutoff_binarize:
 					outarraythresholdedbinarized[x][y][z] = 0
@@ -253,25 +273,23 @@ def threshold_binarize(inmrc, thresholded, thresholdedbinarized, FSCCutoff, Thre
 			counter += 1
 			if counter % iterations_per_progress_bar_update == 0:
 				bar.update(counter+1)
+				
+	return outarraythresholded, outarraythresholdedbinarized
 	
-	mrc_write = mrcfile.new(thresholded,overwrite=True)
-	mrc_write.set_data(outarraythresholded.astype('<f4'))
-	mrc_write.voxel_size = (float(apix),float(apix),float(apix))
-	mrc_write.update_header_from_data()
-	mrc_write.close()
-			
-	mrc_write = mrcfile.new(thresholdedbinarized,overwrite=True)
-	mrc_write.set_data(outarraythresholdedbinarized.astype('<f4'))
-	mrc_write.voxel_size = (float(apix),float(apix),float(apix))
-	mrc_write.update_header_from_data()
-	mrc_write.close()
 
-def calculate_sphericity(inmrc):
+def calculate_sphericity_mrc(inmrc):
+	# requires mrc path as input
 	# read MRC
 	inputmrc = (mrcfile.open(inmrc)).data
-	inputmrc_copy = copy.deepcopy(inputmrc)
-	extended_inputmrc = np.zeros((inputmrc.shape[0]+10,inputmrc.shape[1]+10,inputmrc.shape[2]+10),dtype=np.float) ## Had to extend it before Gaussian filter, else you might get edge effects
-	extended_inputmrc[6:6+inputmrc.shape[0], 6:6+inputmrc.shape[1], 6:6+inputmrc.shape[2]] = inputmrc_copy
+	sphericity = calculate_sphericity_array(inputmrc)
+	return sphericity
+	
+def calculate_sphericity_array(dataarray):
+	# requires numpy array as input
+	
+	dataarray_copy = copy.deepcopy(dataarray)
+	extended_inputmrc = np.zeros((dataarray.shape[0]+10,dataarray.shape[1]+10,dataarray.shape[2]+10),dtype=np.float) ## Had to extend it before Gaussian filter, else you might get edge effects
+	extended_inputmrc[6:6+dataarray.shape[0], 6:6+dataarray.shape[1], 6:6+dataarray.shape[2]] = dataarray_copy
 
 	# Gaussian filtering
 	# Sigma=1 works well
@@ -500,8 +518,14 @@ def check_globalFSC(ThreeDFSC,apix):
 		click.echo(click.style("Warning: Your global half-map FSC rises above 0.143 after the first crossing. Check your refinement and masking.\n",fg="red"))
 	
 	return resolution_below_pt143[0] ## Returns global resolution
+
+def calc_threshold_ranges(numThresholdsForSphericityCalcs,FSCCutoff):
+	# simple uniform distribution
+	inc = (1.0-FSCCutoff)/float(numThresholdsForSphericityCalcs)
+	threshranges = np.arange(FSCCutoff,1.0,inc)
+	return threshranges[::-1]
 	
-def main(halfmap1,halfmap2,fullmap,apix,ThreeDFSC,dthetaInDegrees,histogram,FSCCutoff,ThresholdForSphericity,HighPassFilter):
+def main(halfmap1,halfmap2,fullmap,apix,ThreeDFSC,dthetaInDegrees,histogram,FSCCutoff,ThresholdForSphericity,HighPassFilter,numThresholdsForSphericityCalcs):
 	# Part 00
 	# Warnings and checks. Invisible to user unless something is wrong
 	global_resolution = check_globalFSC(ThreeDFSC,apix)
@@ -510,20 +534,24 @@ def main(halfmap1,halfmap2,fullmap,apix,ThreeDFSC,dthetaInDegrees,histogram,FSCC
 	click.echo(click.style("\nAnalysis Step 01: Generating thresholded and thresholded + binarized maps",fg="blue"))
 	print ("These maps can be used to make figures, and are required for calculating sphericity.")
 	FourierShellHighPassFilter = convert_highpassfilter_to_Fourier_Shells(ThreeDFSC,apix,HighPassFilter)
-	threshold_binarize("Results_" + ThreeDFSC + "/ResEM" + ThreeDFSC + "Out.mrc", "Results_" + ThreeDFSC + "/" + ThreeDFSC + "_Thresholded.mrc", "Results_" + ThreeDFSC + "/" + ThreeDFSC + "_ThresholdedBinarized.mrc", FSCCutoff, ThresholdForSphericity,FourierShellHighPassFilter,apix)
+	threshold_binarize_mrc("Results_" + ThreeDFSC + "/ResEM" + ThreeDFSC + "Out.mrc", "Results_" + ThreeDFSC + "/" + ThreeDFSC + "_Thresholded.mrc", "Results_" + ThreeDFSC + "/" + ThreeDFSC + "_ThresholdedBinarized.mrc", FSCCutoff, ThresholdForSphericity,FourierShellHighPassFilter,apix)
 	print ("Results_" + ThreeDFSC + "/" + ThreeDFSC + "_Thresholded.mrc at " + str(FSCCutoff) + " cutoff and Results_" + ThreeDFSC + "/" + ThreeDFSC + "_ThresholdedBinarized.mrc at " + str(ThresholdForSphericity) + " cutoff for sphericity generated.")
+
 	# Part 02
 	click.echo(click.style("\nAnalysis Step 02: Calculating sphericity",fg="blue"))
-	sphericity = calculate_sphericity("Results_" + ThreeDFSC + "/" + ThreeDFSC + "_ThresholdedBinarized.mrc")
+	sphericity = calculate_sphericity_mrc("Results_" + ThreeDFSC + "/" + ThreeDFSC + "_ThresholdedBinarized.mrc")
 	if sphericity > 1.0: 
 		click.echo(click.style("\nWarning: sphericity is >1. This problem usually has to do with input half maps. Please check your inputs.\n",fg="red"))
-	print ("Sphericity is %0.2f out of 1. 1 represents a perfect sphere." % (sphericity))
+	print ("Sphericity is %0.2f out of 1 at threshold %0.2f. 1 represents a perfect sphere." % (sphericity, ThresholdForSphericity))
+
 	# Part 03
 	click.echo(click.style("\nAnalysis Step 03: Generating Histogram",fg="blue"))
 	histogram_sampling = histogram_sample("Results_" + ThreeDFSC + "/ResEM" + ThreeDFSC + "Out.mrc",FourierShellHighPassFilter)
+
 	# Part 04
 	maxRes, minRes, globalspatialfrequency, globalfsc = HistogramCreation(histogram_sampling,histogram,ThreeDFSC,apix,FSCCutoff,sphericity,global_resolution)
 	print ("Results_" + ThreeDFSC + "/" + histogram + ".pdf generated.")
+
 	# Part 05
 	click.echo(click.style("\nAnalysis Step 04: Generating Output Files for Chimera Viewing of 3DFSC",fg="blue"))
 	os.system("mkdir Results_" + str(ThreeDFSC) + "/Chimera")
@@ -533,5 +561,32 @@ def main(halfmap1,halfmap2,fullmap,apix,ThreeDFSC,dthetaInDegrees,histogram,FSCC
 	print ("Results_" + str(ThreeDFSC) + "/Chimera/3DFSCPlot_Chimera.cmd and Results_" + str(ThreeDFSC) + "/Chimera/lineplot.py generated.")
 	print ("To view in Chimera, open 3DFSCPlot_Chimera.cmd in Chimera, with lineplot.py and the mrc files in the Chimera folder in the same directory.")
 	
+	# Part 06
+	# Optionally, calculate sphericities across multiple thresholds to determine the deviation from the mean
+	click.echo(click.style("\nAnalysis Step 05: calculating sphericity values at multiple thresholds to determine deviation",fg="blue"))
+	if numThresholdsForSphericityCalcs > 0: 
+		thresh_ranges = calc_threshold_ranges(numThresholdsForSphericityCalcs, FSCCutoff)
+		sphericities_output = []
+		for thresh in thresh_ranges:
+			print ("calculating sphericity at threshold %.2f" % (thresh))
+			threedfsc_array = mrcfile.open("Results_" + ThreeDFSC + "/ResEM" + ThreeDFSC + "Out.mrc").data
+			threedfsc_array_thresholded, threedfsc_array_thresholded_binarized = threshold_binarize_array(threedfsc_array, FSCCutoff, thresh, FourierShellHighPassFilter, apix)
+			sphericity = calculate_sphericity_array(threedfsc_array_thresholded_binarized)
+			sphericities_output.append(sphericity)
+			if sphericity > 1.0: 
+				click.echo(click.style("\nWarning: sphericity is >1. This problem usually has to do with input half maps. Please check your inputs.\n",fg="red"))
+			print ("Sphericity is %0.2f out of 1 at threshold %0.2f. 1 represents a perfect sphere." % (sphericity, thresh))
+		dev = np.std(sphericities_output)
+		if dev < 0.02:  
+			click.echo(click.style("\nSphericity deviation is low: %.2f" % (np.std(sphericities_output)), fg="green", bold=True))
+		elif dev >= 0.02 < 0.04:
+			click.echo(click.style("\nSphericity deviation is ok: %.2f" % (np.std(sphericities_output)), fg="yellow", bold=True))
+		else:
+			click.echo(click.style("\nSphericity deviation is high: %.2f. Density might be more anisotropic than normal, check your 3DFSC mrc output" % (np.std(sphericities_output)), fg="red", bold=True))
+		with open("Results_" + str(ThreeDFSC) + "/sphericities_across_thresholds.txt", "w") as f:
+			for i in range(len(thresh_ranges)):
+				f.write("%.3f %.3f\n" % (thresh_ranges[i], sphericities_output[i]))
+		
+		
 if __name__ == '__main__':
-	main(sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4],sys.argv[5],sys.argv[6],sys.argv[7],sys.argv[8],sys.argv[9],sys.argv[10])
+	main(sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4],sys.argv[5],sys.argv[6],sys.argv[7],sys.argv[8],sys.argv[9],sys.argv[10],sys.argv[11])

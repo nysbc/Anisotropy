@@ -133,7 +133,7 @@ def execute(options):
 	
 	# Part 02
 	click.echo(click.style("\nStep 02: Generating Analysis Files",fg="blue"))
-	ThreeDFSC_Analysis.main(halfmap1,halfmap2,fullmap,options.apix,options.ThreeDFSC,options.dthetaInDegrees,options.histogram,options.FSCCutoff,options.ThresholdForSphericity,options.HighPassFilter)
+	ThreeDFSC_Analysis.main(halfmap1,halfmap2,fullmap,options.apix,options.ThreeDFSC,options.dthetaInDegrees,options.histogram,options.FSCCutoff,options.ThresholdForSphericity,options.HighPassFilter,options.numThresholdsForSphericityCalcs)
 	print ("\nDone")
 	print ("Results are in the folder Results_" + str(options.ThreeDFSC))
 	print ("--- %s seconds ---" % (time.time() - start_time))
@@ -159,6 +159,7 @@ if __name__ == '__main__':
     parser.add_option("--ThresholdForSphericity", dest="ThresholdForSphericity", action="store", type="float", default=0.5, help="Threshold value for 3DFSC volume for calculating sphericity. 0.5 is default.", metavar="FLOAT")
     parser.add_option("--HighPassFilter", dest="HighPassFilter", action="store", type="float", default=150.0, help="High pass filter for thresholding in Angstrom. Prevents small dips in directional FSCs at low spatial frequency due to noise from messing up the thresholding step. Decrease if you see a huge wedge missing from your thresholded 3DFSC volume. 150 Angstroms is default.", metavar="FLOAT")
     parser.add_option("--Skip3DFSCGeneration", dest="Skip3DFSCGeneration", action="store", type="string", default="False", help="Allows for skipping of 3DFSC generation to directly run the analysis on a previously generated set of results.", metavar="True or False")
+    parser.add_option("--numThresholdsForSphericityCalcs", dest="numThresholdsForSphericityCalcs", action="store", type="int", default=0, help="calculate sphericities at different threshold cutoffs to determine sphericity deviation across spatial frequencies. This can be useful to evaluate possible effects of overfitting or improperly assigned orientations.", metavar="INT")
 
     (options, args) = parser.parse_args()
     execute(options)
