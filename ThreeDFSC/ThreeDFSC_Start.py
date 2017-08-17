@@ -107,7 +107,7 @@ def execute(options):
 		sys.exit()
 		
 	# Check numThresholdsForSphericityCalcs is bigger than 0
-	if ((options.numThresholdsForSphericityCalcs != None) and (options.numThresholdsForSphericityCalcs < 1)):
+	if (options.numThresholdsForSphericityCalcs < 0):
 		click.echo(click.style("\nError: Please key in a positive integer for the --numThresholdsForSphericityCalcs option.\n",fg="red"))
 		sys.exit()
 

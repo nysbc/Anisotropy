@@ -563,8 +563,8 @@ def main(halfmap1,halfmap2,fullmap,apix,ThreeDFSC,dthetaInDegrees,histogram,FSCC
 	
 	# Part 06
 	# Optionally, calculate sphericities across multiple thresholds to determine the deviation from the mean
-	click.echo(click.style("\nAnalysis Step 05: Calculating Sphericity Values at Multiple Thresholds to Determine Deviation",fg="blue"))
 	if numThresholdsForSphericityCalcs > 0: 
+		click.echo(click.style("\nAnalysis Step 05: Calculating Sphericity Values at Multiple Thresholds to Determine Deviation",fg="blue"))
 		thresh_ranges = calc_threshold_ranges(numThresholdsForSphericityCalcs, FSCCutoff)
 		sphericities_output = []
 		for thresh in thresh_ranges:
