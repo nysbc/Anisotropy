@@ -422,7 +422,7 @@ def AveragesOnShellsUsingLogicB(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR,kZo
 	#griddim=(8,8);
 	
 	enablePrint()
-	with click.progressbar(length=((RMax)**3)) as bar:
+	with click.progressbar(length=((RMax)**6)) as bar:
 		for r in range(1,RMax+1):
 			#range(1,inc+1):
 			#if r!=2: continue
@@ -440,7 +440,7 @@ def AveragesOnShellsUsingLogicB(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR,kZo
 			#
 
 			## Progress bar
-			bar.update((r**3)-((r-1)**3))
+			bar.update((r**6)-((r-1)**6))
 			##
 			
 			NumLoops=1+int(NumOnSurf*NumOnSurf/NumAtEachRMaxCuda/NumAtEachRMaxCuda);# kicks in at r=50

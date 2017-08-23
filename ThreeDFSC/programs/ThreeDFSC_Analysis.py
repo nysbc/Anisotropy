@@ -402,7 +402,10 @@ def HistogramCreation(histogram_sampling,histogram,ThreeDFSC,apix,cutoff,spheric
 				output = globalspatialfrequency[j]
 		histogramlist.append(float(output))
 	
-	#print (histogramlist)
+	HistogramRawOutput = open("Results_" + ThreeDFSC + "/histogram_values.lst","w")
+	for i in histogramlist:
+		HistogramRawOutput.write(str(i) + "\n")
+	HistogramRawOutput.close()
 	
 	## Plotting
 
