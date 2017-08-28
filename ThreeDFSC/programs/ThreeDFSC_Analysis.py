@@ -310,7 +310,7 @@ def calculate_sphericity_array(dataarray):
 	sphericity = (((pi)**(1/3))*((6*volume)**(2/3)))/(surface_area)
 	return sphericity
 	
-def histogram_sample(inmrc, highpassfilter):
+def histogram_sample(inmrc, highpassfilter, ThreeDFSC):
 	
 	# read MRC
 	inputmrc = (mrcfile.open(inmrc)).data
@@ -345,7 +345,9 @@ def histogram_sample(inmrc, highpassfilter):
 				else:
 					histogram_sampling[r][counter] = 1
 			counter += 1
-			
+	
+	np.savetxt("Results_" + str(ThreeDFSC) + "/histogram_raw.csv",histogram_sampling,delimiter=",")
+	
 	return histogram_sampling
 	
 def HistogramCreation(histogram_sampling,histogram,ThreeDFSC,apix,cutoff,sphericity,global_resolution):
@@ -549,7 +551,7 @@ def main(halfmap1,halfmap2,fullmap,apix,ThreeDFSC,dthetaInDegrees,histogram,FSCC
 
 	# Part 03
 	click.echo(click.style("\nAnalysis Step 03: Generating Histogram",fg="blue"))
-	histogram_sampling = histogram_sample("Results_" + ThreeDFSC + "/ResEM" + ThreeDFSC + "Out.mrc",FourierShellHighPassFilter)
+	histogram_sampling = histogram_sample("Results_" + ThreeDFSC + "/ResEM" + ThreeDFSC + "Out.mrc",FourierShellHighPassFilter,ThreeDFSC)
 
 	# Part 04
 	maxRes, minRes, globalspatialfrequency, globalfsc = HistogramCreation(histogram_sampling,histogram,ThreeDFSC,apix,FSCCutoff,sphericity,global_resolution)
