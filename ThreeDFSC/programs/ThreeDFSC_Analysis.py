@@ -16,15 +16,16 @@
 ### 1) UCSF Chimera, especially Tom Goddard
 ### 2) mrcfile 1.0.0 by Colin Palmer (https://github.com/ccpem/mrcfile)
 ###
-### Version 3.0 (23 July 2017)
+### Version 4.0 (5 September 2017)
 ### 
 ### Revisions 
 ### 1.0 - Created analysis program
 ### 2.0 - Combined with plotting, thresholding and sphericity
 ### 3.0 - New thresholding algorithm that scales better with large box sizes
 ### 4.0 - Used click
+### 5.0 - Calculation threshold over range, output raw histogram data
 ### ============================
-version = "4.0"
+version = "5.0"
 
 #pythonlib
 import matplotlib

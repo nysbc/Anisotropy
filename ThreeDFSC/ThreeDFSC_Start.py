@@ -18,7 +18,7 @@
 ### 1) UCSF Chimera, especially Tom Goddard
 ### 2) mrcfile 1.0.0 by Colin Palmer (https://github.com/ccpem/mrcfile)
 ###
-### Version 2.3 (23 July 2017)
+### Version 2.5 (5 September 2017)
 ### 
 ### Revisions 
 ### 1.1 - Added mpl.use('Agg') to allow matplotlib to be used without X-server
@@ -29,7 +29,8 @@
 ### 2.2 - Fixed bugs with 3DFSC missing a line in volume, and plotting title error
 ### 2.3 - Fixed various bugs, new thresholding algorithm, added progress bar, improved Chimera plotting, more error checking
 ### 2.4 - Incorporation with website, use Click package
-version = "2.4"
+### 2.5 - Outputs raw histogram data
+version = "2.5"
 ### ============================
 
 #pythonlib
@@ -46,7 +47,7 @@ import click
 # add the programs submodule directory to the path so we can import its files from anywhere
 sys.path.insert(0,os.path.join(os.path.dirname(os.path.abspath(__file__)),'programs'))
 import ThreeDFSC_ReleaseAug2017
-import ThreeDFSC_Analysis # Version 4.0 Latest
+import ThreeDFSC_Analysis # Version 5.0 Latest
 
 start_time = time.time()
 
