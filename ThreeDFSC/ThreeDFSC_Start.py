@@ -49,6 +49,9 @@ sys.path.insert(0,os.path.join(os.path.dirname(os.path.abspath(__file__)),'progr
 import ThreeDFSC_ReleaseAug2017
 import ThreeDFSC_Analysis # Version 5.0 Latest
 
+#saveout = sys.stdout
+#sys.stdout = open('threedfscstdout.log', 'w')
+
 start_time = time.time()
 
 # Check Anaconda version
@@ -108,7 +111,7 @@ def execute(options):
 		sys.exit()
 		
 	# Check numThresholdsForSphericityCalcs is bigger than 0
-	if (options.numThresholdsForSphericityCalcs < 0):
+	if options.numThresholdsForSphericityCalcs < 1 and options.numThresholdsForSphericityCalcs != 0:
 		click.echo(click.style("\nError: Please key in a positive integer for the --numThresholdsForSphericityCalcs option.\n",fg="red"))
 		sys.exit()
 

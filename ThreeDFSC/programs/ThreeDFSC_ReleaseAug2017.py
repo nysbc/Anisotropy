@@ -38,6 +38,7 @@ def blockPrint():
 	sys.stdout = open(os.devnull, 'w')
 
 def enablePrint():
+#	sys.stdout = open('threedfscstdout.log', 'a')
 	sys.stdout = sys.__stdout__
 
 #%%	  Section -1 Function Definitions
