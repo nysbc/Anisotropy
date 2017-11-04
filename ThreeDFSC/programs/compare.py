@@ -1,4 +1,4 @@
-import cudatest
+import cuda_kernels
 import jittest
 import math
 import numpy as np
@@ -11,73 +11,79 @@ def test():
     start = time.time()
 
 # Host code
-    NumOnSurf = 1000
-    End = 200
+    NumOnSurf = 30000
+    End = 15000
     Start = 0
     Thresh = 0.93
 
-    
-#   A = np.full((NumOnSurf, 3),1.12 , np.int)
-
-
-    A = np.random.randint(0,9,size=(NumOnSurf,3))
-#A = [[1, 2, 3],[4, 5, 6],[7, 8, 9]]
-#A = np.random.rand(NumOnSurf,(End-Start))
+# Instantiate test values
+    kXNow = np.random.randint(0,9,size=(NumOnSurf))
+    kYNow = np.random.randint(0,9,size=(NumOnSurf))
+    kZNow = np.random.randint(0,9,size=(NumOnSurf))
 
 # Copy the arrays to the device
-    A_global_mem = cuda.to_device(A)
+    kXNow_global_mem = cuda.to_device(kXNow)
+    kYNow_global_mem = cuda.to_device(kYNow)
+    kZNow_global_mem = cuda.to_device(kZNow)
+
 
 # Allocate memory on the device for the result
-    C_global_mem = cuda.device_array((NumOnSurf,End-Start))
-#C_global_mem = np.zeros((NumOnSurf,End-Start),dtype=np.int)
+    NumAtROutPre_global_mem = cuda.device_array((NumOnSurf,End-Start))
+    Prod11_global_mem = cuda.device_array(NumOnSurf)
 
 
 # Configure the blocks
-    threadsperblock = (32,32)
-    blockspergrid_x = int(math.ceil(A.shape[0] / threadsperblock[0]))
-    blockspergrid = (blockspergrid_x,blockspergrid_x)
-
-    #blockspergrid = 512
+    threadsperblock = (16,1,1)
+    blockspergrid_x = int(math.ceil(kXNow.shape[0] / threadsperblock[0]))
+    blockspergrid = (blockspergrid_x,1,1)
 
     print("blockspergrid_x = ",blockspergrid_x)
     print("blockspergrid = ",blockspergrid)
 
     start_cuda = time.time()
 # Start the kernel 
-    cudatest.innerProductCuda[blockspergrid, threadsperblock](A_global_mem, C_global_mem,End,Start,Thresh)
+    cuda_kernels.cuda_calcProd11[blockspergrid, threadsperblock](kXNow,kYNow,kZNow,Prod11_global_mem)
+
+    cuda_kernels.cuda_calcInner2[blockspergrid, threadsperblock](\
+            kXNow,\
+            kYNow,\
+            kZNow,\
+            Prod11_global_mem,\
+            NumAtROutPre_global_mem,\
+            End,\
+            Start,\
+            Thresh)
+
 
 # Copy the result back to the host
-    C = C_global_mem.copy_to_host()
-#C = cudatest.innerProductCuda[blockspergrid, threadsperblock](A_global_mem, C_global_mem,End,Start,Thresh)
+    NumAtROutPre = NumAtROutPre_global_mem.copy_to_host()
     end_cuda = time.time()
 
     print("AveragesOnShells CUDA: ")
-    print(C)
-    print("shape of C is ",np.shape(C))
+    print(NumAtROutPre)
+
+    print("CUDA version completed in %.3f seconds."%(end_cuda - start_cuda))
+
+    print("shape of NumAtROutPre is ",np.shape(NumAtROutPre))
 
     start_jit = time.time()
-    C2 = jittest.AveragesOnShells(A[:,0],A[:,1],A[:,2], NumOnSurf, Thresh,Start, End)
+    C2 = jittest.AveragesOnShells(kXNow,kYNow,kZNow, NumOnSurf, Thresh,Start, End)
     end_jit = time.time()
     print("AveragesOnShells jit: ")
     print(C2)
 
-    print(type(C))
+    print(type(NumAtROutPre))
     print(type(C2))
 
-    print(sum(sum(C==C2)))
+    print(sum(sum(NumAtROutPre==C2)))
     print(NumOnSurf*(End-Start))
-
-    #for i in enumerate(C):
-    #    for j in enumerate(i):
-    #        if C[i,j] != C2[i,j]:
-    #            print(C[i,j] != C2[i,j])
 
     end = time.time()
     print("CUDA version completed in %.3f seconds."%(end_cuda - start_cuda))
     print("AUTOJIT version completed in %.3f seconds."%(end_jit - start_jit))
     print("Completed in %.3f seconds."%(end-start))
 
-    return C,C2
+    return NumAtROutPre,C2
 
 if __name__ == "__main__":
     test()

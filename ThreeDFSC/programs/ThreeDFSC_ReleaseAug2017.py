@@ -27,8 +27,10 @@ import os
 import sys
 import numpy as np
 from math import *
+import math
 from numba import *
-from numba import autojit
+from numba import autojit, cuda
+import cuda_kernels
 import copy
 import h5py
 
@@ -68,10 +70,12 @@ def print_progress(iteration, total, prefix='', suffix='', decimals=1):
 ## Added to mute the print statements
 
 def blockPrint():
-	sys.stdout = open(os.devnull, 'w')
+	#sys.stdout = open(os.devnull, 'w')
+	pass
 
 def enablePrint():
-	sys.stdout = sys.__stdout__
+	#sys.stdout = sys.__stdout__
+	pass
 
 #%%	  Section -1 Function Definitions
 
@@ -360,9 +364,46 @@ def createFTarrays(nx,ny,nz,lsd2,lr,inc,dx2,dy2,dz2,dcH,dFPower,nx2,ny2,nz2):
 
 #%%	 Section -1 Function Definitions %	For a given shell, this function returns whether a pair are close or not
 
+def AveragesOnShellsInnerLogicKernelCuda(kXNow,kYNow,kZNow,NumOnSurf,Thresh,Start,End):
+
+    # Copy data to gpu device
+    kXNow_global_mem = cuda.to_device(kXNow)
+    kYNow_global_mem = cuda.to_device(kYNow)
+    kZNow_global_mem = cuda.to_device(kZNow)
+
+    # Allocate memory on gpu for temporary and output data
+    NumAtROutPre_global_mem = cuda.device_array((NumOnSurf,End-Start))
+    Prod11_global_mem = cuda.device_array(NumOnSurf)
+
+    # Set threads per block and blocks per grid
+    threadsperblock = (16,1,1)
+    blockspergrid_x = int(math.ceil(kXNow.shape[0] / threadsperblock[0]))
+    blockspergrid = (blockspergrid_x,1,1)
+
+    start_cuda = time.time()
+
+    # Kernel 1, calculate Prod11
+    cuda_kernels.cuda_calcProd11[blockspergrid, threadsperblock](kXNow,kYNow,kZNow,Prod11_global_mem)
+
+    # Kernel 2, calculate Inner2
+    cuda_kernels.cuda_calcInner2[blockspergrid, threadsperblock](\
+            kXNow,\
+            kYNow,\
+            kZNow,\
+            Prod11_global_mem,\
+            NumAtROutPre_global_mem,\
+            End,\
+            Start,\
+            Thresh)
+
+    end_cuda = time.time()
+    print("CUDA calculation completed in ",end_cuda - start_cuda,".")
+
+    NumAtROutPre = NumAtROutPre_global_mem.copy_to_host()
+    return NumAtROutPre
+
 @autojit	
-def AveragesOnShellsInnerLogicKernelnonCuda(kXNow,kYNow,kZNow, \
-										NumOnSurf,	Thresh,Start, End):
+def AveragesOnShellsInnerLogicKernelnonCuda(kXNow,kYNow,kZNow,NumOnSurf,Thresh,Start, End):
 #	 NumAtROutPre = np.zeros(int(NumOnSurf*(NumOnSurf+1)/2),dtype=int)
 #	 NumAtROutPre = np.zeros([NumOnSurf,NumOnSurf],dtype=int)
 #	 NumAtROutPre = np.identity(NumOnSurf,dtype=int)
@@ -401,6 +442,7 @@ def AveragesOnShellsInnerLogicKernelnonCuda(kXNow,kYNow,kZNow, \
 				#N(X-1) - (X)(X-1)/2 + Y
 				#print(r,jSurf1,jSurf2,retNow1L,retofR[r][jSurf2],retofROut[r][jSurf2],);
 	#print(Count, NumOnSurf*(NumOnSurf+1)//2)
+	print("shape of NumAtROutPre is",np.shape(NumAtROutPre))
 	return NumAtROutPre
 
 
