@@ -29,7 +29,8 @@ import numpy as np
 from math import *
 import math
 from numba import *
-from numba import autojit, cuda
+from numba import autojit, prange, cuda
+import numba
 import cuda_kernels
 import copy
 import h5py
@@ -79,7 +80,7 @@ def enablePrint():
 
 #%%	  Section -1 Function Definitions
 
-@autojit
+@numba.autojit
 def ExtractAxes(f):
 	
 	[nx,ny,nz]	= f.shape;
@@ -92,20 +93,20 @@ def ExtractAxes(f):
 	yf=np.zeros(ny2+1)
 	zf=np.zeros(nz2+1)
 	
-	for ix in range(nx2):
+	for ix in prange(nx2):
 		xf[ix]=f[ix+nx2,ny2,nz2];
 		
-	for iy in range(ny2):
+	for iy in prange(ny2):
 		yf[iy]=f[nx2,iy+ny2,nz2];
 		
-	for iz in range(nz2):
+	for iz in prange(nz2):
 		zf[iz]=f[nx2,ny2,iz+nz2];
 
 	return [xf,yf,zf]
 
 #%%	 Section -1 Function Definitions
 
-@autojit
+@numba.autojit
 def AddAxes(f,jDir, Val):
 	
 	[nx,ny,nz]	= f.shape;
@@ -130,12 +131,12 @@ def AddAxes(f,jDir, Val):
 
 #%%	 Section -1 Function Definitions
 
-@autojit
+@numba.autojit
 def ZeroPad(nx,ny,nz,fT,gT):
 	fp=np.zeros([nx+2,ny,nz]);
 	gp=np.zeros([nx+2,ny,nz]);
 
-	for ix in range(nx):
+	for ix in prange(nx):
 		for iy in range(ny):
 			for iz in range(nz):
 				fp[ix,iy,iz]=fT[ix,iy,iz]
@@ -145,12 +146,12 @@ def ZeroPad(nx,ny,nz,fT,gT):
 #Functions read in 0.078624 seconds for size nx=256 
 #%%	 Section -1 Function Definitions
 
-@autojit
+@numba.autojit
 def FFTArray2Real(nx,ny,nz,F):
 
 	d1=np.zeros([nx+4,ny,nz]);# 36,32,32
 
-	for ix in range(0,nx+3,2):
+	for ix in prange(0,nx+3,2):
 		ixover2= ix//2;
 		for iy in range(ny):
 			for iz in range(nz):
@@ -162,13 +163,13 @@ def FFTArray2Real(nx,ny,nz,F):
 
 #%%	 Section -1 Function Definitions %	 Create FT outputs
 
-@autojit
+@numba.autojit
 def CreateFTLikeOutputs(inc,nx,ny,nz,ToBeAveraged,nx2,ny2,nz2,dx2,dy2,dz2):# created from CreateFSCOutputs
 
 	ret = np.zeros(inc+1)
 	lr = np.zeros(inc+1)
 	#Count=0;
-	for iz in range(nz):
+	for iz in prange(nz):
 		kz=iz;
 		if (iz>nz2): kz=iz-nz;# This is the actual value kz, can be neg
 		argz= float(kz*kz)*dz2;
@@ -189,7 +190,7 @@ def CreateFTLikeOutputs(inc,nx,ny,nz,ToBeAveraged,nx2,ny2,nz2,dx2,dy2,dz2):# cre
 
 #%%	 Section -1 Function Definitions %	 Create FSC outputs for Pawel program
 
-@autojit
+@numba.autojit
 def CreateFSCOutputs(inc,nx,ny,nz,d1,d2,nx2,ny2,nz2,dx2,dy2,dz2):
 
 	ret = np.zeros(inc+1)
@@ -197,7 +198,7 @@ def CreateFSCOutputs(inc,nx,ny,nz,d1,d2,nx2,ny2,nz2,dx2,dy2,dz2):
 	n2	= np.zeros(inc+1)
 	lr = np.zeros(inc+1)
 	#Count=0;
-	for iz in range(nz):
+	for iz in prange(nz):
 		kz=iz;
 		if (iz>nz2): kz=iz-nz;# This is the actual value kz, can be neg
 		argz= float(kz*kz)*dz2;
@@ -225,7 +226,7 @@ def CreateFSCOutputs(inc,nx,ny,nz,d1,d2,nx2,ny2,nz2,dx2,dy2,dz2):
 #%%	 Section -1 Function Definitions 
 #			Find values of product at individual points, organized on shells in FS
 
-@autojit
+@numba.autojit
 def createFSCarrays(nx,ny,nz,lsd2,lr,inc,dx2,dy2,dz2,d1,d2,nx2,ny2,nz2):
 
 	lrMaxOver2= int(lr[-1]//2);
@@ -241,7 +242,7 @@ def createFSCarrays(nx,ny,nz,lsd2,lr,inc,dx2,dy2,dz2,d1,d2,nx2,ny2,nz2):
 	NumAtEachR = np.zeros(inc+1,dtype=int);
 #				
 	rmax=0;
-	for iz in range(nz):
+	for iz in prange(nz):
 		kz=iz;
 		if (iz>nz2):
 			kz=iz-nz;# This is the actual value kz, can be neg
@@ -297,7 +298,7 @@ def createFSCarrays(nx,ny,nz,lsd2,lr,inc,dx2,dy2,dz2,d1,d2,nx2,ny2,nz2):
 
 #%%	 Section -1 Function Definitions 
 #			Find values of product at individual points, organized on shells in FS
-@autojit
+@numba.autojit
 def createFTarrays(nx,ny,nz,lsd2,lr,inc,dx2,dy2,dz2,dcH,dFPower,nx2,ny2,nz2):
 
 	lrMaxOver2= int(lr[-1]//2);
@@ -312,7 +313,7 @@ def createFTarrays(nx,ny,nz,lsd2,lr,inc,dx2,dy2,dz2,dcH,dFPower,nx2,ny2,nz2):
 	NumAtEachR = np.zeros(inc+1,dtype=int);
 #				
 	rmax=0;
-	for iz in range(nz):
+	for iz in prange(nz):
 		kz=iz;
 		if (iz>nz2):
 			kz=iz-nz;# This is the actual value kz, can be neg
@@ -376,7 +377,7 @@ def AveragesOnShellsInnerLogicKernelCuda(kXNow,kYNow,kZNow,NumOnSurf,Thresh,Star
     Prod11_global_mem = cuda.device_array(NumOnSurf)
 
     # Set threads per block and blocks per grid
-    threadsperblock = (16,1,1)
+    threadsperblock = (32,1,1)
     blockspergrid_x = int(math.ceil(kXNow.shape[0] / threadsperblock[0]))
     blockspergrid = (blockspergrid_x,1,1)
 
@@ -396,13 +397,13 @@ def AveragesOnShellsInnerLogicKernelCuda(kXNow,kYNow,kZNow,NumOnSurf,Thresh,Star
             Start,\
             Thresh)
 
-    end_cuda = time.time()
-    print("CUDA calculation completed in ",end_cuda - start_cuda,".")
-
     NumAtROutPre = NumAtROutPre_global_mem.copy_to_host()
+    end_cuda = time.time()
+    print("\nCUDA calculation completed in ",end_cuda - start_cuda,".")
+
     return NumAtROutPre
 
-@autojit	
+@numba.autojit	
 def AveragesOnShellsInnerLogicKernelnonCuda(kXNow,kYNow,kZNow,NumOnSurf,Thresh,Start, End):
 #	 NumAtROutPre = np.zeros(int(NumOnSurf*(NumOnSurf+1)/2),dtype=int)
 #	 NumAtROutPre = np.zeros([NumOnSurf,NumOnSurf],dtype=int)
@@ -418,7 +419,7 @@ def AveragesOnShellsInnerLogicKernelnonCuda(kXNow,kYNow,kZNow,NumOnSurf,Thresh,S
 
 	Thresh2=Thresh*Thresh
 	#Count=0;
-	for jSurf1 in range(NumOnSurf):
+	for jSurf1 in prange(NumOnSurf):
 		#retNow1RL =retofRR[r] 
 		kX1=kXNow[jSurf1]; 
 		kY1=kYNow[jSurf1]; 
@@ -529,7 +530,7 @@ def AveragesOnShellsUsingLogicB(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR,kZo
 			#print("jLoop,Start,End = %g,  %g  %g " %(jLoop,Start,End) )
 			NumAtROutPre = np.zeros((NumOnSurf,End-Start), dtype=np.int)
 			#print("NumAtROutPre.shape %g %g" %(NumAtROutPre.shape))
-			NumAtROutPre = AveragesOnShellsInnerLogicKernelnonCuda(kXNow,kYNow,kZNow, NumOnSurf, Thresh,Start, End);
+			NumAtROutPre = AveragesOnShellsInnerLogicKernelCuda(kXNow,kYNow,kZNow, NumOnSurf, Thresh,Start, End);
 			deltaTimeN =time.time()-startTime;
 			# NumAtROutPre created in 6.16 for size r=80
 			# NumAtROutPre created in 88.067775 seconds for size r=128
@@ -613,7 +614,7 @@ def NormalizeShells(nx,ny,nz,kXofR,kYofR,kZofR,inc,retofROutR, retofROutI, n1ofR
 	#ResultR[0][0]=1;
 	#ResEMR.set_value_at(nx2-1,ny2-1,nz2-1,1);
 	# Values in real space are going to 
-	for r in range(1,min(inc+1,RMax)):
+	for r in prange(1,min(inc+1,RMax)):
 		LastInd= NumAtEachR[r]-1;
 		if (r%5 ==1): print(r, LastInd)
 		# retofROutR[r][:LastInd]  = np.sum(retofROutRPre,axis=0);
