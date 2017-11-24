@@ -26,27 +26,29 @@ def filter_and_sum(retNowR,retNowI,n1Now,n2Now,NumAtROutPre,reduced,End,Start):
 #    print("retNowR[",x,"] is ",retNowR[x])
 #    print("retNowR[",x,"].shape is ",retNowR[x].shape)
 #    print("retNowR.shape is ",retNowR.shape)
+
     for i in range((End-Start)):
 #        print("i is ",i)
         MultVec = NumAtROutPre[:,x]
 #        print("MultVec: ",MultVec)
 #        print("NumAtROutPre[:,"+str(x)+"] is :",NumAtROutPre[:,x])
 #        print("Shape of retNowR[x,i] is: ",np.shape(retNowR[i]))
+
+
         retofROutRPre += retNowR[i]*MultVec[i]
+        retofROutIPre += retNowI[i]*MultVec[i]
+        n1ofROutPre += n1Now[i]*MultVec[i]
+        n2ofROutPre += n2Now[i]*MultVec[i]
+
 #        print("retNowR[x,"+str(i)+"]: ",retNowR[x,i])
 #        print("MultVec["+str(i)+"]: ",MultVec[i])
 #        print("retNowR[x,"+str(i)+"]*MultVec["+str(i)+"] = ",retNowR[x,i]*MultVec[i])
-        retofROutIPre += retNowI[i]*MultVec[i]
-#        print("retofROutRPre is: ",retofROutRPre)
-        n1ofROutPre += n1Now[i]*MultVec[i]
-        n2ofROutPre += n2Now[i]*MultVec[i]
 
 
     reduced[0,x] = retofROutRPre
     reduced[1,x] = retofROutIPre
     reduced[2,x] = n1ofROutPre
     reduced[3,x] = n2ofROutPre
-#    print("reduced "+str(x)+"is ",reduced,x)
 
 
 
