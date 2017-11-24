@@ -5,7 +5,48 @@ import numba
 import numpy as np
 import time
 
+@cuda.jit
+def filter_and_sum(retNowR,retNowI,n1Now,n2Now,NumAtROutPre,reduced,End,Start):
 
+    x = cuda.grid(1)
+    if (x >= reduced.shape[1]):
+      return
+#    print("reduced shape is ",reduced.shape)
+#    print("x is ",x)
+    retofROutRPre = 0
+    retofROutIPre = 0
+    n1ofROutPre = 0
+    n2ofROutPre = 0
+#    print("End-Start is",End-Start)
+#    print("x is ",x)
+#    print("NumAtROutPre shape is ",NumAtROutPre.shape)
+#    print("NumatROutPre[:,",x,"] is ",NumAtROutPre[:,x])
+#    print("NumatROutPre[:,",x,"].shape is ",NumAtROutPre[:,x].shape)
+#    print("********************************************************")
+#    print("retNowR[",x,"] is ",retNowR[x])
+#    print("retNowR[",x,"].shape is ",retNowR[x].shape)
+#    print("retNowR.shape is ",retNowR.shape)
+    for i in range((End-Start)):
+#        print("i is ",i)
+        MultVec = NumAtROutPre[:,x]
+#        print("MultVec: ",MultVec)
+#        print("NumAtROutPre[:,"+str(x)+"] is :",NumAtROutPre[:,x])
+#        print("Shape of retNowR[x,i] is: ",np.shape(retNowR[i]))
+        retofROutRPre += retNowR[i]*MultVec[i]
+#        print("retNowR[x,"+str(i)+"]: ",retNowR[x,i])
+#        print("MultVec["+str(i)+"]: ",MultVec[i])
+#        print("retNowR[x,"+str(i)+"]*MultVec["+str(i)+"] = ",retNowR[x,i]*MultVec[i])
+        retofROutIPre += retNowI[i]*MultVec[i]
+#        print("retofROutRPre is: ",retofROutRPre)
+        n1ofROutPre += n1Now[i]*MultVec[i]
+        n2ofROutPre += n2Now[i]*MultVec[i]
+
+
+    reduced[0,x] = retofROutRPre
+    reduced[1,x] = retofROutIPre
+    reduced[2,x] = n1ofROutPre
+    reduced[3,x] = n2ofROutPre
+#    print("reduced "+str(x)+"is ",reduced,x)
 
 
 
@@ -72,7 +113,7 @@ if __name__ == "__main__":
     Prod11_global_mem = cuda.device_array((NumOnSurf))
 
 # Configure the blocks
-    threadsperblock = (32,1,1)
+    threadsperblock = (64,1,1)
     blockspergrid_x = int(math.ceil(A.shape[0] / threadsperblock[0]))
     blockspergrid = (blockspergrid_x,1,1)
     print("blockspergrid_x = ",blockspergrid_x)
