@@ -365,43 +365,69 @@ def createFTarrays(nx,ny,nz,lsd2,lr,inc,dx2,dy2,dz2,dcH,dFPower,nx2,ny2,nz2):
 
 #%%     Section -1 Function Definitions %    For a given shell, this function returns whether a pair are close or not
 
-def AveragesOnShellsInnerLogicKernelCuda(kXNow,kYNow,kZNow,NumOnSurf,Thresh,Start,End):
+def AveragesOnShellsInnerLogicKernelCuda(kXNow,kYNow,kZNow,\
+                                         kXofR_global_mem,\
+                                         kYofR_global_mem,\
+                                         kZofR_global_mem,\
+                                         retofRR_global_mem,\
+                                         retofRI_global_mem,\
+                                         n1ofR_global_mem,\
+                                         n2ofR_global_mem,\
+                                         NumOnSurf,\
+                                         Thresh,\
+                                         Start,\
+                                         End,\
+                                         r):
 
+    stream = cuda.stream()
     # Copy data to gpu device
-    kXNow_global_mem = cuda.to_device(kXNow)
-    kYNow_global_mem = cuda.to_device(kYNow)
-    kZNow_global_mem = cuda.to_device(kZNow)
+    #kXNow_global_mem = cuda.to_device(kXNow,stream=stream)
+    #kYNow_global_mem = cuda.to_device(kYNow,stream=stream)
+    #kZNow_global_mem = cuda.to_device(kZNow,stream=stream)
 
     # Allocate memory on gpu for temporary and output data
     NumAtROutPre_global_mem = cuda.device_array((NumOnSurf,End-Start))
-    Prod11_global_mem = cuda.device_array(NumOnSurf)
+    Prod11_global_mem = cuda.device_array(NumOnSurf,stream=stream,dtype=np.float32)
 
     # Set threads per block and blocks per grid
     threadsperblock = (32,1,1)
-    blockspergrid_x = int(math.ceil(kXNow.shape[0] / threadsperblock[0]))
+    blockspergrid_x = int(math.ceil(kXofR_global_mem[r][:NumOnSurf].shape[0] / threadsperblock[0]))
     blockspergrid = (blockspergrid_x,1,1)
-
     start_cuda = time.time()
 
     # Kernel 1, calculate Prod11
-    cuda_kernels.cuda_calcProd11[blockspergrid, threadsperblock](kXNow,kYNow,kZNow,Prod11_global_mem)
+    cuda_kernels.cuda_calcProd11[blockspergrid, threadsperblock,stream](\
+                                                                        kXofR_global_mem,\
+                                                                        kYofR_global_mem,\
+                                                                        kZofR_global_mem,\
+                                                                        Prod11_global_mem,\
+                                                                        NumOnSurf,\
+                                                                        r)
 
+    stream.synchronize()
     # Kernel 2, calculate Inner2
-    cuda_kernels.cuda_calcInner2[blockspergrid, threadsperblock](\
-            kXNow,\
-            kYNow,\
-            kZNow,\
-            Prod11_global_mem,\
-            NumAtROutPre_global_mem,\
-            End,\
-            Start,\
-            Thresh)
-
-    NumAtROutPre = NumAtROutPre_global_mem.copy_to_host()
+    cuda_kernels.cuda_calcInner2[blockspergrid, threadsperblock,stream](\
+                                                                        kXofR_global_mem,\
+                                                                        kYofR_global_mem,\
+                                                                        kZofR_global_mem,\
+                                                                        Prod11_global_mem,\
+                                                                        NumAtROutPre_global_mem,\
+                                                                        End,\
+                                                                        Start,\
+                                                                        Thresh,\
+                                                                        NumOnSurf,\
+                                                                        r)
     end_cuda = time.time()
-    print("\nCUDA calculation completed in ",end_cuda - start_cuda,".")
+    stream.synchronize()
+    print("\nCUDA inner calculations completed in "+str(end_cuda - start_cuda)+".")
 
-    return NumAtROutPre
+    return NumAtROutPre_global_mem
+#    NumAtROutPre = NumAtROutPre_global_mem.copy_to_host(stream=stream)
+#    stream.synchronize()
+#    end_cuda = time.time()
+#    print("\nCUDA calculation completed in ",end_cuda - start_cuda,".")
+#
+#    return NumAtROutPre
 
 @numba.autojit    
 def AveragesOnShellsInnerLogicKernelnonCuda(kXNow,kYNow,kZNow,NumOnSurf,Thresh,Start, End):
@@ -448,30 +474,37 @@ def AveragesOnShellsInnerLogicKernelnonCuda(kXNow,kYNow,kZNow,NumOnSurf,Thresh,S
     #print("sum, sum of NumAtROutPre = %g " %(np.sum(np.sum(NumAtROutPre,axis=0))));
     
 
-def AveragesOnShellsInnerLogicCCuda(retNowR,retNowI,n1Now, n2Now, Start, End,NumAtROutPre):
+def AveragesOnShellsInnerLogicCCuda(\
+                                    retNowR_global_mem,\
+                                    retNowI_global_mem,\
+                                    n1ofR_global_mem,\
+                                    n2ofR_global_mem,\
+                                    NumAtROutPre_global_mem,\
+                                    End,\
+                                    Start,\
+                                    NumOnSurf,\
+                                    r):
 
-    threadsperblock = (64,1,1)
-    blockspergrid_x = int(math.ceil(retNowR.shape[0]/threadsperblock[0]))
+    threadsperblock = (32,1,1)
+    blockspergrid_x = int(math.ceil(retNowR_global_mem[r][:NumOnSurf].shape[0]/threadsperblock[0]))
     blockspergrid = (blockspergrid_x,1,1)
     # set up stream
-    stream = 0
-    NumAtROutPre_global_mem = cuda.to_device(NumAtROutPre, stream)
-    retNowR_global_mem = cuda.to_device(retNowR, stream)
-    retNowI_global_mem = cuda.to_device(retNowI, stream)
-    n1Now_global_mem = cuda.to_device(n1Now, stream)
-    n2Now_global_mem = cuda.to_device(n2Now, stream)
-    reduced_global_mem = cuda.device_array((retNowR.shape[0],(End-Start)),stream=stream)
+    stream = cuda.stream()
+    reduced_global_mem = cuda.device_array((retNowR_global_mem[r][:NumOnSurf].shape[0],(End-Start)))
     cuda_kernels.filter_and_sum[threadsperblock,blockspergrid,stream](\
         retNowR_global_mem,\
         retNowI_global_mem,\
-        n1Now_global_mem,\
-        n2Now_global_mem,\
+        n1ofR_global_mem,\
+        n2ofR_global_mem,\
         NumAtROutPre_global_mem,\
         reduced_global_mem,\
         End,\
-        Start)
+        Start,\
+        NumOnSurf,\
+        r)
 
     reduced = reduced_global_mem.copy_to_host(stream=stream)
+    stream.synchronize()
 
     return reduced
 
@@ -519,6 +552,8 @@ def AveragesOnShellsUsingLogicB(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR,kZo
     n1ofROut   = np.zeros([inc+1,NumAtEachRMax]); #n1ofR.copy();
     n2ofROut   = np.zeros([inc+1,NumAtEachRMax]); #n2ofR.copy();
     NumAtROut  = np.zeros([inc+1,NumAtEachRMax]); #
+
+    print("shape of retofROutR is ",np.shape(retofROutR))
     NumAtEachRMaxCuda= 15871;
     
     retofROutR[0,0] = retofRR[0,0];
@@ -528,7 +563,16 @@ def AveragesOnShellsUsingLogicB(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR,kZo
     
     #blockdim=(8,8);
     #griddim=(8,8);
-    
+
+    # Load all data into GPU memory
+    # Need to convert data to contiguous arrays
+    kXofR_global_mem = cuda.to_device(np.ascontiguousarray(kXofR,dtype=np.float32))
+    kYofR_global_mem = cuda.to_device(np.ascontiguousarray(kYofR,dtype=np.float32))
+    kZofR_global_mem = cuda.to_device(np.ascontiguousarray(kZofR,dtype=np.float32))
+    retofRR_global_mem = cuda.to_device(np.ascontiguousarray(retofRR,dtype=np.float32))
+    retofRI_global_mem = cuda.to_device(np.ascontiguousarray(retofRI,dtype=np.float32))
+    n1ofR_global_mem = cuda.to_device(np.ascontiguousarray(n1ofR,dtype=np.float32))
+    n2ofR_global_mem = cuda.to_device(np.ascontiguousarray(n2ofR,dtype=np.float32))
     enablePrint()
     for r in range(1,RMax+1):#range(1,inc+1):
         #if r!=2: continue
@@ -542,8 +586,7 @@ def AveragesOnShellsUsingLogicB(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR,kZo
         retNowI = retofRI[r][:NumOnSurf]; 
         n1Now    = n1ofR[r][:NumOnSurf]; 
         n2Now    = n2ofR[r][:NumOnSurf];#   for given 
-        #print(NumOnSurf)
-        #
+
 
         ## Progress bar
         print_progress(r,RMax)
@@ -563,7 +606,19 @@ def AveragesOnShellsUsingLogicB(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR,kZo
             NumAtROutPre = np.zeros((NumOnSurf,End-Start), dtype=np.int)
             #print("NumAtROutPre.shape %g %g" %(NumAtROutPre.shape))
             #InnerLogicCuda_start = time.time()
-            NumAtROutPre = AveragesOnShellsInnerLogicKernelCuda(kXNow,kYNow,kZNow, NumOnSurf, Thresh,Start, End);
+            NumAtROutPre_global_mem = AveragesOnShellsInnerLogicKernelCuda(kXNow,kYNow,kZNow,\
+                                                                           kXofR_global_mem,\
+                                                                           kYofR_global_mem,\
+                                                                           kZofR_global_mem,\
+                                                                           retofRR_global_mem,\
+                                                                           retofRI_global_mem,\
+                                                                           n1ofR_global_mem,\
+                                                                           n2ofR_global_mem,\
+                                                                           NumOnSurf,\
+                                                                           Thresh,\
+                                                                           Start,\
+                                                                           End,\
+                                                                           r);
             #print("Time to complete InnerLogicKernelCuda is ",time.time()-InnerLogicCuda_start)
 
             #InnerLogicnonCuda_start = time.time()
@@ -574,62 +629,38 @@ def AveragesOnShellsUsingLogicB(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR,kZo
             #print("sum, sum of NumAtROutPre = %g " %(np.sum(np.sum(NumAtROutPre,axis=0))));
             #print("how many zeros of NumAtROutPre = %g " %(len(np.where(NumAtROutPre==0)[0] ) ) );
             startTime = time.time()
-            #print("retNowR is ",retNowR)
-            #print("retNowI is ",retNowI)
-            #print("n1Now is ",n1Now)
-            #print("n2Now is ",n2Now)
 
+            LogicCCuda_start = startTime
+            #cuda.synchronize()
 
+            reduced = AveragesOnShellsInnerLogicCCuda(\
+                                                      retofRR_global_mem,\
+                                                      retofRI_global_mem,\
+                                                      n1ofR_global_mem,\
+                                                      n2ofR_global_mem,\
+                                                      NumAtROutPre_global_mem,\
+                                                      End,\
+                                                      Start,\
+                                                      NumOnSurf,\
+                                                      r)
+            stream = cuda.stream() 
+            NumAtROutPre = NumAtROutPre_global_mem.copy_to_host(stream=stream)
+            cuda.synchronize()
+            print("\nTime to complete AveragesOnShellsInnerLogicCCuda is ",time.time()-LogicCCuda_start)
 
-            #print("*************INPUT TO AveragesOnShellsInnerLogicC*******************")
-            #print("retNowR is ",retNowR)
-            #print("retNowI is ",retNowI)
-            #print("n1Now is ",n1Now)
-            #print("n2Now is ",n2Now)
-            #print("Start is ",Start)
-            #print("End is ",End)
-            #print("NumAtROutPre is",NumAtROutPre)
-            #print("********************************************************************")
-            #LogicC_start = time.time()
-            #[retofROutRPre2, retofROutIPre2, n1ofROutPre2,n2ofROutPre2] = AveragesOnShellsInnerLogicC(retNowR,retNowI,n1Now, n2Now, Start, End,NumAtROutPre)
-            #print("Time to complete AveragesOnShellsInnerLogicC is ",time.time()-LogicC_start)
-            LogicCCuda_start = time.time()
-            #print("retNowR: ",retNowR)
-            #print("retNowI: ",retNowI)
-            #print("n1Now: ",n1Now)
-            #print("n2Now: ",n2Now)
-            #print("Start: ",Start)
-            #print("End: ",End)
-            #print("NumAtROutPre: ",NumAtROutPre)
-            reduced = AveragesOnShellsInnerLogicCCuda(retNowR,retNowI,n1Now, n2Now, Start, End,NumAtROutPre)
-            print("Time to complete AveragesOnShellsInnerLogicCCuda is ",time.time()-LogicCCuda_start)
-
-            #print("retofROutRPre2: ",retofROutRPre2)
-            #print("reduced[0]: ",reduced[0])
-
-            #np.testing.assert_array_equal(retofROutRPre2,reduced[0])
-            #np.testing.assert_array_equal(retofROutIPre2,reduced[1])
-            #np.testing.assert_array_equal(n1ofROutPre2,reduced[2])
-            #np.testing.assert_array_equal(n2ofROutPre2,reduced[3])
-
-           #print("*************OUTPUT FROM AveragesOnShellsInnerLogicC*******************")
-            #print("retofROutRPre is ",reduced[0])
-            #print("retofROutIPre is ",reduced[1])
-            #print("n1ofROutPre is ",reduced[2])
-            #print("n2ofROutPre is ",reduced[3])
-            #print("********************************************************************")
-
-            #retofROutR[r][Start:End]  = retofROutRPre;
-            #retofROutI[r][Start:End]  = retofROutIPre;
-            #n1ofROut[r][Start:End]      = n1ofROutPre;
-            #n2ofROut[r][Start:End]      = n2ofROutPre;
- 
-            retofROutR[r][Start:End]  = reduced[0];
-            retofROutI[r][Start:End]  = reduced[1];
-            n1ofROut[r][Start:End]      = reduced[2];
-            n2ofROut[r][Start:End]      = reduced[3];
             #print(np.min(n2ofROutPre),np.max(n2ofROutPre),)
+
+            retofROutR[r][Start:End] = reduced[0]
+            retofROutI[r][Start:End] = reduced[1]
+            n1ofROut[r][Start:End]   = reduced[2]
+            n2ofROut[r][Start:End]   = reduced[3]
+            
+            # NEED ANOTHER KERNEL HERE TO DO MATRIX-ROW SUM
+
+
+            sum_start = time.time()
             qq= np.sum(NumAtROutPre,axis=0);# length End-Start, 7936
+            print("CPU time to generate matrix sum is ",time.time()-sum_start)
             NumAtROut[r][Start:End]      = qq;
             #qqq =np.where(qq==0)[0];
             #print("how many zeros of MultVec , %g " %(len(qqq) )  );
