@@ -512,7 +512,7 @@ def check_globalFSC(ThreeDFSC,apix):
 	for i in range(len(globalfsc)):
 		if (float(globalfsc[i]) < 0.143):
 			shells_below_pt143 += 1
-			resolution_below_pt143.append((1/(globalspatialfrequency[i])))
+			resolution_below_pt143.append((1/(globalspatialfrequency[i-1])))
 		if (shells_below_pt143 > 0):
 			total_shells_past_first_pt143 += 1
 	
