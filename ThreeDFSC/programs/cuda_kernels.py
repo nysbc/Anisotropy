@@ -6,6 +6,21 @@ import numpy as np
 import time
 
 @cuda.jit
+def sum_rows(\
+             NumAtROutPre_global_mem,
+             sum_array_global_mem,Start,End):
+
+  x = cuda.grid(1)
+  if (x>= (NumAtROutPre_global_mem.shape[1])):
+    return
+
+  temp_sum = 0
+  for i in range(NumAtROutPre_global_mem.shape[0]):
+    temp_sum += NumAtROutPre_global_mem[i,x]
+
+  sum_array_global_mem[x] = temp_sum
+
+@cuda.jit
 def filter_and_sum(\
                    retofRR_global_mem,\
                    retofRI_global_mem,\
@@ -25,13 +40,13 @@ def filter_and_sum(\
     x = cuda.grid(1)
     if (x >= (End - Start)):
       return
-
     retofROutRPre = 0
     retofROutIPre = 0
     n1ofROutPre = 0
     n2ofROutPre = 0
 
     MultVec = NumAtROutPre[:,x]
+
     for i in range(MultVec.shape[0]):
 
  
