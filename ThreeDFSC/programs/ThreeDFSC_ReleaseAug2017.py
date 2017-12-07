@@ -390,7 +390,7 @@ def AveragesOnShellsInnerLogicKernelCuda(kXNow,kYNow,kZNow,\
     Prod11_global_mem = cuda.device_array(NumOnSurf,stream=stream,dtype=np.float32)
 
     # Set threads per block and blocks per grid
-    threadsperblock = (32,1,1)
+    threadsperblock = (64,1,1)
     blockspergrid_x = int(math.ceil(kXofR_global_mem[r][:NumOnSurf].shape[0] / threadsperblock[0]))
     blockspergrid = (blockspergrid_x,1,1)
     start_cuda = time.time()
@@ -485,7 +485,7 @@ def AveragesOnShellsInnerLogicCCuda(\
                                     NumOnSurf,\
                                     r):
 
-    threadsperblock = (32,1,1)
+    threadsperblock = (64,1,1)
     blockspergrid_x = int(math.ceil(retNowR_global_mem[r][:NumOnSurf].shape[0]/threadsperblock[0]))
     blockspergrid = (blockspergrid_x,1,1)
     # set up stream

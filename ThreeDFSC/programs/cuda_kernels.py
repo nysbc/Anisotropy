@@ -23,28 +23,22 @@ def filter_and_sum(\
     n2Now = n2ofR_global_mem[r][:NumOnSurf]
 
     x = cuda.grid(1)
-    if (x >= reduced.shape[1]):
+    if (x >= (End - Start)):
       return
-#    print("reduced shape is ",reduced.shape)
-#    print("x is ",x)
+
     retofROutRPre = 0
     retofROutIPre = 0
     n1ofROutPre = 0
     n2ofROutPre = 0
 
-    for i in range((End-Start)):
+    MultVec = NumAtROutPre[:,x]
+    for i in range(MultVec.shape[0]):
 
-        MultVec = NumAtROutPre[:,x]
  
         retofROutRPre += retNowR[i]*MultVec[i]
         retofROutIPre += retNowI[i]*MultVec[i]
         n1ofROutPre += n1Now[i]*MultVec[i]
         n2ofROutPre += n2Now[i]*MultVec[i]
-
-#        print("retNowR[x,"+str(i)+"]: ",retNowR[x,i])
-#        print("MultVec["+str(i)+"]: ",MultVec[i])
-#        print("retNowR[x,"+str(i)+"]*MultVec["+str(i)+"] = ",retNowR[x,i]*MultVec[i])
-
 
     reduced[0,x] = retofROutRPre
     reduced[1,x] = retofROutIPre
@@ -70,8 +64,6 @@ def cuda_calcProd11(\
     Prod11[x] = kXofR_global_mem[r][x]*kXofR_global_mem[r][x] +\
                 kYofR_global_mem[r][x]*kYofR_global_mem[r][x] +\
                 kZofR_global_mem[r][x]*kZofR_global_mem[r][x]
-    #Prod11[x] = kXNow[x]*kXNow[x] + kYNow[x]*kYNow[x] + kZNow[x]*kZNow[x]
-    #Prod11 = kX1*KX1 + kY1*kY1 + kZ1*kZ1
 
 @cuda.jit()
 def cuda_calcInner2(\
@@ -87,9 +79,9 @@ def cuda_calcInner2(\
                     r):
     """Calculate Prod12
     """
-    kXNow = kXofR_global_mem[r][:NumOnSurf]
-    kYNow = kYofR_global_mem[r][:NumOnSurf]
-    kZNow = kZofR_global_mem[r][:NumOnSurf]
+    #kXNow = kXofR_global_mem[r][:NumOnSurf]
+    #kYNow = kYofR_global_mem[r][:NumOnSurf]
+    #kZNow = kZofR_global_mem[r][:NumOnSurf]
 
     x = cuda.grid(1)
     if x >= Prod11.shape[0]:
