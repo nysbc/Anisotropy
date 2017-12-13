@@ -672,7 +672,7 @@ def AveragesOnShellsUsingLogicB(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR,kZo
             #NumAtROut[r][Start:End]      = qq;
 
             NumAtROut[r][Start:End] = cuda_kernels.sum_rows(NumAtROutPre_global_mem,Start,End)
-            print("CPU time to compute sum_rows on GPU: ",time.time()-sum_start)
+            print("Time to compute sum_rows on GPU: ",time.time()-sum_start)
             #qqq =np.where(qq==0)[0];
             #print("how many zeros of MultVec , %g " %(len(qqq) )  );
         deltaTime =time.time()-startTime;
