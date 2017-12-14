@@ -200,11 +200,7 @@ def calcDistanceKernel(boxsize,center,out):
           + cuda.threadIdx.x;
     if idx >= out.shape[0]:
         return
-    #out[idx] += tx*boxsize*boxsize + ty*boxsize + tz
-    #print("blockId: ",blockId, "idx: ",idx)
-    #out[idx,0] = idx
-    #print("index: ",idx," - tx, ty, tz, ",tx,ty,tz," - bx,by,bz: ",bx,by,bz," - bw,bh,bd: ",bw,bh,bd," = ",out[idx])
-    #print("idx: ",idx," - blockId",blockId)
+
     out[idx,1] = (idx // (boxsize*boxsize))
     out[idx,2] = (idx %(boxsize*boxsize)) // boxsize
     out[idx,3] = idx % boxsize
@@ -236,7 +232,7 @@ def sum_rows(\
     threadsperblock = (32,1,1)
     blockspergrid_x = (math.ceil(NumAtROutPre_global_mem.shape[0]/threadsperblock[0]))
     blockspergrid = (blockspergrid_x,1,1)
-    #NumAtROutPre_global_mem = cuda.to_device(NumAtROutPre)
+
     sum_array_global_mem = cuda.device_array((End-Start))
     sum_rowsKernel[blockspergrid,threadsperblock](NumAtROutPre_global_mem,sum_array_global_mem,Start,End)
 
@@ -269,10 +265,10 @@ def filter_and_sum(\
                    Start,\
                    NumOnSurf,\
                    r):
-    retNowR = retofRR_global_mem[r][:NumOnSurf]
-    retNowI = retofRI_global_mem[r][:NumOnSurf]
-    n1Now = n1ofR_global_mem[r][:NumOnSurf]
-    n2Now = n2ofR_global_mem[r][:NumOnSurf]
+    #retNowR = retofRR_global_mem[r][:NumOnSurf]
+    #retNowI = retofRI_global_mem[r][:NumOnSurf]
+    #n1Now = n1ofR_global_mem[r][:NumOnSurf]
+    #n2Now = n2ofR_global_mem[r][:NumOnSurf]
 
     x = cuda.grid(1)
     if (x >= (End - Start)):
@@ -287,10 +283,10 @@ def filter_and_sum(\
     for i in range(MultVec.shape[0]):
 
  
-        retofROutRPre += retNowR[i]*MultVec[i]
-        retofROutIPre += retNowI[i]*MultVec[i]
-        n1ofROutPre += n1Now[i]*MultVec[i]
-        n2ofROutPre += n2Now[i]*MultVec[i]
+        retofROutRPre += retofRR_global_mem[r][i]*MultVec[i]
+        retofROutIPre += retofRI_global_mem[r][i]*MultVec[i]
+        n1ofROutPre += n1ofR_global_mem[r][i]*MultVec[i]
+        n2ofROutPre += n2ofR_global_mem[r][i]*MultVec[i]
 
     reduced[0,x] = retofROutRPre
     reduced[1,x] = retofROutIPre
@@ -311,16 +307,16 @@ def cuda_calcProd11(\
     """Calculate partial product Prod11
     """
     x = cuda.grid(1)
-    if x >= kXofR_global_mem[:NumOnSurf].shape[0]:
+    if x >= kXofR_global_mem[r][:NumOnSurf].shape[0]:
         return
 
-    #Prod11[x] = kXofR_global_mem[r][x]*kXofR_global_mem[r][x] +\
-    #            kYofR_global_mem[r][x]*kYofR_global_mem[r][x] +\
-    #            kZofR_global_mem[r][x]*kZofR_global_mem[r][x]
+    Prod11[x] = kXofR_global_mem[r][x]*kXofR_global_mem[r][x] +\
+                kYofR_global_mem[r][x]*kYofR_global_mem[r][x] +\
+                kZofR_global_mem[r][x]*kZofR_global_mem[r][x]
 
-    Prod11[x] = kXofR_global_mem[x]*kXofR_global_mem[x] +\
-                kYofR_global_mem[x]*kYofR_global_mem[x] +\
-                kZofR_global_mem[x]*kZofR_global_mem[x]
+    #Prod11[x] = kXofR_global_mem[x]*kXofR_global_mem[x] +\
+    #            kYofR_global_mem[x]*kYofR_global_mem[x] +\
+    #            kZofR_global_mem[x]*kZofR_global_mem[x]
 
 @cuda.jit()
 def cuda_calcInner2(\
@@ -355,16 +351,16 @@ def cuda_calcInner2(\
 
             #Prod12 = kX1*kX2 + kY1*kY2 + kZ1*kZ2
             #Prod12 = kXNow[x]*kXNow[(i+Start)] + kYNow[x]*kYNow[(i+Start)] + kZNow[x]*kZNow[(i+Start)]
-            Prod12 = kXofR_global_mem[x]*kXofR_global_mem[(i+Start)] + \
-                     kYofR_global_mem[x]*kYofR_global_mem[(i+Start)] + \
-                     kZofR_global_mem[x]*kZofR_global_mem[(i+Start)]
+            Prod12 = kXofR_global_mem[r][x]*kXofR_global_mem[r][(i+Start)] + \
+                     kYofR_global_mem[r][x]*kYofR_global_mem[r][(i+Start)] + \
+                     kZofR_global_mem[r][x]*kZofR_global_mem[r][(i+Start)]
 
 
             #Prod22 = kX2*kX2 + kY2*kY2 + kZ2*kZ2
             #Prod22 = kXNow[(i+Start)]*kXNow[(i+Start)] + kYNow[(i+Start)]*kYNow[(i+Start)] + kZNow[(i+Start)]*kZNow[(i+Start)]
-            Prod22 = kXofR_global_mem[(i+Start)]*kXofR_global_mem[(i+Start)] + \
-                     kYofR_global_mem[(i+Start)]*kYofR_global_mem[(i+Start)] + \
-                     kZofR_global_mem[(i+Start)]*kZofR_global_mem[(i+Start)]
+            Prod22 = kXofR_global_mem[r][(i+Start)]*kXofR_global_mem[r][(i+Start)] + \
+                     kYofR_global_mem[r][(i+Start)]*kYofR_global_mem[r][(i+Start)] + \
+                     kZofR_global_mem[r][(i+Start)]*kZofR_global_mem[r][(i+Start)]
             if Prod22==0:
                 return
             else:

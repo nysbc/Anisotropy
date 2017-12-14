@@ -1,5 +1,7 @@
 *.pyc
 *.bak
-Results_T40-3DFSC/*
-Example/Results_T40-3DFSC/*
+Example/Results_T40-3DFSC/Chimera/*
 Example/output.log
+Example/*
+Example2/*
+Example3/*

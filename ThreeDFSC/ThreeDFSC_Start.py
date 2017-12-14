@@ -91,6 +91,7 @@ def execute(options):
 			mask = os.path.abspath(str(options.mask))
 			halfmap1 = masking(options.halfmap1,mask,options.halfmap1[:-4] + "_masked.mrc")
 			halfmap2 = masking(options.halfmap2,mask,options.halfmap2[:-4] + "_masked.mrc")
+			print ("\nShape halfmap1 is",np.shape(halfmap1))
 			print ("\nMasking performed: " + options.halfmap1[:-4] + "_masked.mrc and " + options.halfmap2[:-4] + "_masked.mrc generated.")
 	# Check half maps
 	if halfmap1 == halfmap2:
@@ -111,8 +112,8 @@ def execute(options):
 	elif (options.Skip3DFSCGeneration == "True"):
 			print ("\n\033[1;34;40mStep 01: Skipped\033[0;37;40m\nUsing pre-existing 3DFSC volume and output files.")
 			if os.path.isfile("Results_" + options.ThreeDFSC + "/ResEM" + options.ThreeDFSC + "OutglobalFSC.csv") == False:
-					print ("\033[1;31;40mResults_" + options.ThreeDFSC + "/ResEM" + options.ThreeDFSC + "OutglobalFSC.csv missing! Please re-run entire 3DFSC program to generate the files needed for analysis.\033[0;37;40m\n")
-					sys.exit()
+			    print ("\033[1;31;40mResults_" + options.ThreeDFSC + "/ResEM" + options.ThreeDFSC + "OutglobalFSC.csv missing! Please re-run entire 3DFSC program to generate the files needed for analysis.\033[0;37;40m\n")
+			    sys.exit()
 			elif os.path.isfile("Results_" + options.ThreeDFSC + "/ResEM" + options.ThreeDFSC + "Out.mrc") == False:
 					print ("\033[1;31;40mResults_" + options.ThreeDFSC + "/ResEM" + options.ThreeDFSC + "Out.mrc missing! Please re-run entire 3DFSC program to generate the files needed for analysis.\033[0;37;40m\n")
 					sys.exit()

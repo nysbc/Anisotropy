@@ -365,10 +365,13 @@ def createFTarrays(nx,ny,nz,lsd2,lr,inc,dx2,dy2,dz2,dcH,dFPower,nx2,ny2,nz2):
 
 #%%     Section -1 Function Definitions %    For a given shell, this function returns whether a pair are close or not
 
-def AveragesOnShellsInnerLogicKernelCuda(kXNow,kYNow,kZNow,\
-                                         #kXofR_global_mem,\
-                                         #kYofR_global_mem,\
-                                         #kZofR_global_mem,\
+def AveragesOnShellsInnerLogicKernelCuda(\
+                                         #kXNow,kYNow,kZNow,\
+                                         NumAtROutPre_global_mem,\
+                                         Prod11_global_mem,\
+                                         kXofR_global_mem,\
+                                         kYofR_global_mem,\
+                                         kZofR_global_mem,\
                                          retofRR_global_mem,\
                                          retofRI_global_mem,\
                                          n1ofR_global_mem,\
@@ -385,22 +388,24 @@ def AveragesOnShellsInnerLogicKernelCuda(kXNow,kYNow,kZNow,\
     #kYNow_global_mem = cuda.to_device(kYNow,stream=stream)
     #kZNow_global_mem = cuda.to_device(kZNow,stream=stream)
 
+    time_to_device = time.time()
     # Allocate memory on gpu for temporary and output data
-    NumAtROutPre_global_mem = cuda.device_array((NumOnSurf,End-Start))
-    Prod11_global_mem = cuda.device_array(NumOnSurf,stream=stream,dtype=np.float32)
+    #NumAtROutPre_global_mem = cuda.device_array((NumOnSurf,End-Start))
+    #Prod11_global_mem = cuda.device_array(NumOnSurf,stream=stream,dtype=np.float32)
+    #print("Time to allocate NumAtROutPre_global_mem and Prod11_global_mem to device is ",time.time() - time_to_device)
 
     # Set threads per block and blocks per grid
-    threadsperblock = (64,1,1)
-    blockspergrid_x = int(math.ceil(kXNow[:NumOnSurf].shape[0] / threadsperblock[0]))
+    threadsperblock = (1024,1,1)
+    blockspergrid_x = int(math.ceil(kXofR_global_mem[r][:NumOnSurf].shape[0] / threadsperblock[0]))
     blockspergrid = (blockspergrid_x,1,1)
     start_cuda = time.time()
 
     # Kernel 1, calculate Prod11
     cuda_kernels.cuda_calcProd11[blockspergrid, threadsperblock,stream](\
-                                                                        kXNow,kYNow,kZNow,\
-                                                                        #kXofR_global_mem,\
-                                                                        #kYofR_global_mem,\
-                                                                        #kZofR_global_mem,\
+                                                                        #kXNow,kYNow,kZNow,\
+                                                                        kXofR_global_mem,\
+                                                                        kYofR_global_mem,\
+                                                                        kZofR_global_mem,\
                                                                         Prod11_global_mem,\
                                                                         NumOnSurf,\
                                                                         r)
@@ -408,10 +413,10 @@ def AveragesOnShellsInnerLogicKernelCuda(kXNow,kYNow,kZNow,\
     stream.synchronize()
     # Kernel 2, calculate Inner2
     cuda_kernels.cuda_calcInner2[blockspergrid, threadsperblock,stream](\
-                                                                        kXNow,kYNow,kZNow,\
-                                                                        #kXofR_global_mem,\
-                                                                        #kYofR_global_mem,\
-                                                                        #kZofR_global_mem,\
+                                                                        #kXNow,kYNow,kZNow,\
+                                                                        kXofR_global_mem,\
+                                                                        kYofR_global_mem,\
+                                                                        kZofR_global_mem,\
                                                                         Prod11_global_mem,\
                                                                         NumAtROutPre_global_mem,\
                                                                         End,\
@@ -419,8 +424,8 @@ def AveragesOnShellsInnerLogicKernelCuda(kXNow,kYNow,kZNow,\
                                                                         Thresh,\
                                                                         NumOnSurf,\
                                                                         r)
-    end_cuda = time.time()
     stream.synchronize()
+    end_cuda = time.time()
     print("\nCUDA inner calculations completed in "+str(end_cuda - start_cuda)+".")
 
     return NumAtROutPre_global_mem
@@ -487,18 +492,18 @@ def AveragesOnShellsInnerLogicCCuda(\
                                     NumOnSurf,\
                                     r):
 
-    threadsperblock = (64,1,1)
+    threadsperblock = (1024,1,1)
     blockspergrid_x = int(math.ceil(retNowR_global_mem[r][:NumOnSurf].shape[0]/threadsperblock[0]))
     blockspergrid = (blockspergrid_x,1,1)
     # set up stream
     stream = cuda.stream()
     device_array_start = time.time()
-    #reduced_global_mem = cuda.device_array((retNowR_global_mem[r][:NumOnSurf].shape[0],(End-Start)))
     reduced_global_mem = cuda.device_array((4,(End-Start)))
+    print("Shape of NumAtROutPre_global_mem is ",NumAtROutPre_global_mem.shape)
     print("Shape of reduced_global_mem is ",reduced_global_mem.shape)
-    print("Time to create cuda.device_array is ",time.time() - device_array_start)
+    #print("Time to create cuda.device_array is ",time.time() - device_array_start)
     filter_time = time.time()
-    cuda_kernels.filter_and_sum[threadsperblock,blockspergrid,stream](\
+    cuda_kernels.filter_and_sum[threadsperblock,blockspergrid](\
         retNowR_global_mem,\
         retNowI_global_mem,\
         n1ofR_global_mem,\
@@ -512,7 +517,7 @@ def AveragesOnShellsInnerLogicCCuda(\
     stream.synchronize()
     print("Time to complete filter_and_sum is ",time.time() - filter_time)
     reduced_start = time.time()
-    reduced = reduced_global_mem.copy_to_host(stream=stream)
+    reduced = reduced_global_mem.copy_to_host()
     print("Time to transfer reduced to host is ",time.time() - reduced_start)
 
     return reduced
@@ -524,13 +529,6 @@ def AveragesOnShellsInnerLogicCCuda(\
 @numba.autojit
 def AveragesOnShellsInnerLogicC(retNowR,retNowI,n1Now, n2Now,Start, End ,NumAtROutPre):
 
-#    print("retNowR dimensions: ",np.shape(retNowR))
-#    print("retNowI dimensions: ",np.shape(retNowI))
-#    print("n1Now dimensions: ",np.shape(n1Now))
-#    print("n2Now dimensions: ",np.shape(n2Now))
-#    print("Start dimensions: ",np.shape(Start))
-#    print("End dimensions: ",np.shape(End))
-#    print("NumAtROutPre dimensions: ",np.shape(NumAtROutPre))
     NumNow= End -Start;
     retofROutRPre = np.zeros(NumNow)
     retofROutIPre = np.zeros(NumNow)
@@ -585,7 +583,7 @@ def AveragesOnShellsUsingLogicB(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR,kZo
     enablePrint()
     for r in range(1,RMax+1):#range(1,inc+1):
         #if r!=2: continue
-        if ((r-1)%5)==0: print(r)
+        #if ((r-1)%5)==0: print(r)
         NumOnSurf = int(NumAtEachR[r]);
         #LastInd = NumAtEachR[r]-1 ;
         kXNow    = kXofR[r][:NumOnSurf]; 
@@ -603,8 +601,13 @@ def AveragesOnShellsUsingLogicB(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR,kZo
         
         NumLoops=1+int(NumOnSurf*NumOnSurf/NumAtEachRMaxCuda/NumAtEachRMaxCuda);# kicks in at r=50
         Stride=int(NumOnSurf/NumLoops);
+        
         startTime = time.time()
         blockPrint()
+        print("NumOnSurf:NumLoops:Stride -  ",NumOnSurf,":",NumLoops,":",Stride)
+        stream = cuda.stream()
+        NumAtROutPre_global_mem = cuda.device_array((NumOnSurf,Stride))
+        Prod11_global_mem = cuda.device_array(NumOnSurf,stream=stream,dtype=np.float32)
         for jLoop in range(NumLoops):
 
             Start=jLoop*Stride;
@@ -615,10 +618,12 @@ def AveragesOnShellsUsingLogicB(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR,kZo
             NumAtROutPre = np.zeros((NumOnSurf,End-Start), dtype=np.int)
             #print("NumAtROutPre.shape %g %g" %(NumAtROutPre.shape))
             InnerLogicCuda_start = time.time()
-            NumAtROutPre_global_mem = AveragesOnShellsInnerLogicKernelCuda(kXNow,kYNow,kZNow,\
-                                                                           #kXofR_global_mem,\
-                                                                           #kYofR_global_mem,\
-                                                                           #kZofR_global_mem,\
+            NumAtROutPre_global_mem = AveragesOnShellsInnerLogicKernelCuda(#kXNow,kYNow,kZNow,\
+                                                                           NumAtROutPre_global_mem,\
+                                                                           Prod11_global_mem,\
+                                                                           kXofR_global_mem,\
+                                                                           kYofR_global_mem,\
+                                                                           kZofR_global_mem,\
                                                                            retofRR_global_mem,\
                                                                            retofRI_global_mem,\
                                                                            n1ofR_global_mem,\
@@ -653,34 +658,23 @@ def AveragesOnShellsUsingLogicB(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR,kZo
                                                       NumOnSurf,\
                                                       r)
             stream = cuda.stream() 
-            #NumAtROutPre = NumAtROutPre_global_mem.copy_to_host(stream=stream)
             cuda.synchronize()
             print("\nTime to complete AveragesOnShellsInnerLogicCCuda is ",time.time()-LogicCCuda_start)
-
-            #print(np.min(n2ofROutPre),np.max(n2ofROutPre),)
 
             retofROutR[r][Start:End] = reduced[0]
             retofROutI[r][Start:End] = reduced[1]
             n1ofROut[r][Start:End]   = reduced[2]
             n2ofROut[r][Start:End]   = reduced[3]
             
-            # NEED ANOTHER KERNEL HERE TO DO MATRIX-ROW SUM
-
-
             sum_start = time.time()
-            #qq= np.sum(NumAtROutPre,axis=0);# length End-Start, 7936
-            #NumAtROut[r][Start:End]      = qq;
-
+            print("Dimensions of NumAtROutPre_global_mem are ",NumAtROutPre_global_mem.shape)
             NumAtROut[r][Start:End] = cuda_kernels.sum_rows(NumAtROutPre_global_mem,Start,End)
             print("Time to compute sum_rows on GPU: ",time.time()-sum_start)
-            #qqq =np.where(qq==0)[0];
-            #print("how many zeros of MultVec , %g " %(len(qqq) )  );
         deltaTime =time.time()-startTime;
         #if ((r-1)%5)==0: 
         #    print("NumAtROutPre created in %f seconds, retofROutRPre  in %f seconds for size r=%g " \
         #        % (deltaTimeN,deltaTime,r))
 
-    #print(retofROutRPre)
     return [retofROutR, retofROutI, n1ofROut,n2ofROut,NumAtROut]
 
     
