@@ -7,7 +7,7 @@ import os
 import time
 import pdb
 
-@cuda.jit('float64(float64,float64,float64,float64,float64,float64)',device=True)
+@cuda.jit('float32(float32,float32,float32,float32,float32,float32)',device=True)
 #def calculate_distance(p1,p2):
 def calculate_distance(p1_0,p1_1,p1_2,p2_0,p2_1,p2_2):
         return math.sqrt( (p1_0 - p2_0)**2 + (p1_1 - p2_1)**2 + (p1_2 - p2_2)**2)
@@ -26,7 +26,6 @@ def calcNeighborsKernel(points_array,\
                     outarraythresholded,\
                     outarraythresholdedbinarized):
     # NOTE: using i as the thread index, NOT x, so as to mimic original CPU code more easily
-
     i = cuda.grid(1)
 
     if i >= points_array.shape[0]:
@@ -36,15 +35,15 @@ def calcNeighborsKernel(points_array,\
     y = int(point[2])
     z = int(point[3])
     twentysix_neighboring_points = cuda.local.array((26,3),dtype=numba.int64)
-    twentysix_neighboring_points_dist = cuda.local.array(26,dtype=numba.float64)
+    twentysix_neighboring_points_dist = cuda.local.array(26,dtype=numba.float32)
 
-    if float64(point[0]) < float64(highpassfilter):
+    if float32(point[0]) < float32(highpassfilter):
         outarraythresholded[x][y][z] = inputmrc[x][y][z]
         outarraythresholdedbinarized[x][y][z] = 1
         memory_inmrc_thresholded[x][y][z] = 1
         memory_inmrc_thresholdedbinarized[x][y][z] = 1
 
-    elif float64(memory_inmrc_thresholded[x][y][z]) < float64(min_cutoff):
+    elif float32(memory_inmrc_thresholded[x][y][z]) < float32(min_cutoff):
         outarraythresholded[x][y][z] = 0
         outarraythresholdedbinarized[x][y][z] = 0
         memory_inmrc_thresholded[x][y][z] = 0
@@ -60,6 +59,7 @@ def calcNeighborsKernel(points_array,\
         twentysix_neighboring_points[4] = (x-1,y,z-1)
         twentysix_neighboring_points[5] = (x,y-1,z-1)
         twentysix_neighboring_points[6] = (x-1,y-1,z-1)
+
         twentysix_neighboring_points[7] = (x+1,y,z)
         twentysix_neighboring_points[8] = (x,y+1,z)
         twentysix_neighboring_points[9] = (x,y,z+1)
@@ -67,6 +67,7 @@ def calcNeighborsKernel(points_array,\
         twentysix_neighboring_points[11] = (x+1,y,z+1)
         twentysix_neighboring_points[12] = (x,y+1,z+1)
         twentysix_neighboring_points[13] = (x+1,y+1,z+1)
+
         twentysix_neighboring_points[14] = (x+1,y-1,z)
         twentysix_neighboring_points[15] = (x+1,y,z-1)
         twentysix_neighboring_points[16] = (x+1,y-1,z-1)
@@ -76,46 +77,47 @@ def calcNeighborsKernel(points_array,\
         twentysix_neighboring_points[20] = (x-1,y,z+1)
         twentysix_neighboring_points[21] = (x,y-1,z+1)
         twentysix_neighboring_points[22] = (x-1,y-1,z+1)
+
         twentysix_neighboring_points[23] = (x+1,y+1,z-1)
         twentysix_neighboring_points[24] = (x+1,y-1,z+1)
         twentysix_neighboring_points[25] = (x-1,y+1,z+1)
 
 
-        twentysix_neighboring_points_dist[0] = calculate_distance(float64(x-1),float64(y),float64(z),center[0],center[1],center[2])
-        twentysix_neighboring_points_dist[1] = calculate_distance(float64(x),float64(y-1),float64(z),center[0],center[1],center[2])
-        twentysix_neighboring_points_dist[2] = calculate_distance(float64(x),float64(y),float64(z-1),center[0],center[1],center[2])
-        twentysix_neighboring_points_dist[3] = calculate_distance(float64(x-1),float64(y-1),float64(z),center[0],center[1],center[2])
-        twentysix_neighboring_points_dist[4] = calculate_distance(float64(x-1),float64(y),float64(z-1),center[0],center[1],center[2])
-        twentysix_neighboring_points_dist[5] = calculate_distance(float64(x),float64(y-1),float64(z-1),center[0],center[1],center[2])
-        twentysix_neighboring_points_dist[6] = calculate_distance(float64(x-1),float64(y-1),float64(z-1),center[0],center[1],center[2])
+        twentysix_neighboring_points_dist[0] = calculate_distance(float32(x-1),float32(y),float32(z),center[0],center[1],center[2])
+        twentysix_neighboring_points_dist[1] = calculate_distance(float32(x),float32(y-1),float32(z),center[0],center[1],center[2])
+        twentysix_neighboring_points_dist[2] = calculate_distance(float32(x),float32(y),float32(z-1),center[0],center[1],center[2])
+        twentysix_neighboring_points_dist[3] = calculate_distance(float32(x-1),float32(y-1),float32(z),center[0],center[1],center[2])
+        twentysix_neighboring_points_dist[4] = calculate_distance(float32(x-1),float32(y),float32(z-1),center[0],center[1],center[2])
+        twentysix_neighboring_points_dist[5] = calculate_distance(float32(x),float32(y-1),float32(z-1),center[0],center[1],center[2])
+        twentysix_neighboring_points_dist[6] = calculate_distance(float32(x-1),float32(y-1),float32(z-1),center[0],center[1],center[2])
 
-        twentysix_neighboring_points_dist[7] = calculate_distance(float64(x+1),float64(y),float64(z),center[0],center[1],center[2])
-        twentysix_neighboring_points_dist[8] = calculate_distance(float64(x),float64(y+1),float64(z),center[0],center[1],center[2])
-        twentysix_neighboring_points_dist[9] = calculate_distance(float64(x),float64(y),float64(z+1),center[0],center[1],center[2])
-        twentysix_neighboring_points_dist[10] = calculate_distance(float64(x+1),float64(y+1),float64(z),center[0],center[1],center[2])
-        twentysix_neighboring_points_dist[11] = calculate_distance(float64(x+1),float64(y),float64(z+1),center[0],center[1],center[2])
-        twentysix_neighboring_points_dist[12] = calculate_distance(float64(x),float64(y+1),float64(z+1),center[0],center[1],center[2])
-        twentysix_neighboring_points_dist[13] = calculate_distance(float64(x+1),float64(y+1),float64(z+1),center[0],center[1],center[2])
+        twentysix_neighboring_points_dist[7] = calculate_distance(float32(x+1),float32(y),float32(z),center[0],center[1],center[2])
+        twentysix_neighboring_points_dist[8] = calculate_distance(float32(x),float32(y+1),float32(z),center[0],center[1],center[2])
+        twentysix_neighboring_points_dist[9] = calculate_distance(float32(x),float32(y),float32(z+1),center[0],center[1],center[2])
+        twentysix_neighboring_points_dist[10] = calculate_distance(float32(x+1),float32(y+1),float32(z),center[0],center[1],center[2])
+        twentysix_neighboring_points_dist[11] = calculate_distance(float32(x+1),float32(y),float32(z+1),center[0],center[1],center[2])
+        twentysix_neighboring_points_dist[12] = calculate_distance(float32(x),float32(y+1),float32(z+1),center[0],center[1],center[2])
+        twentysix_neighboring_points_dist[13] = calculate_distance(float32(x+1),float32(y+1),float32(z+1),center[0],center[1],center[2])
 
-        twentysix_neighboring_points_dist[14] = calculate_distance(float64(x+1),float64(y-1),float64(z),center[0],center[1],center[2])
-        twentysix_neighboring_points_dist[15] = calculate_distance(float64(x+1),float64(y),float64(z-1),center[0],center[1],center[2])
-        twentysix_neighboring_points_dist[16] = calculate_distance(float64(x+1),float64(y-1),float64(z-1),center[0],center[1],center[2])
-        twentysix_neighboring_points_dist[17] = calculate_distance(float64(x-1),float64(y+1),float64(z),center[0],center[1],center[2])
-        twentysix_neighboring_points_dist[18] = calculate_distance(float64(x),float64(y+1),float64(z-1),center[0],center[1],center[2])
-        twentysix_neighboring_points_dist[19] = calculate_distance(float64(x-1),float64(y+1),float64(z-1),center[0],center[1],center[2])
-        twentysix_neighboring_points_dist[20] = calculate_distance(float64(x-1),float64(y),float64(z+1),center[0],center[1],center[2])
-        twentysix_neighboring_points_dist[21] = calculate_distance(float64(x),float64(y-1),float64(z+1),center[0],center[1],center[2])
-        twentysix_neighboring_points_dist[22] = calculate_distance(float64(x-1),float64(y-1),float64(z+1),center[0],center[1],center[2])
+        twentysix_neighboring_points_dist[14] = calculate_distance(float32(x+1),float32(y-1),float32(z),center[0],center[1],center[2])
+        twentysix_neighboring_points_dist[15] = calculate_distance(float32(x+1),float32(y),float32(z-1),center[0],center[1],center[2])
+        twentysix_neighboring_points_dist[16] = calculate_distance(float32(x+1),float32(y-1),float32(z-1),center[0],center[1],center[2])
+        twentysix_neighboring_points_dist[17] = calculate_distance(float32(x-1),float32(y+1),float32(z),center[0],center[1],center[2])
+        twentysix_neighboring_points_dist[18] = calculate_distance(float32(x),float32(y+1),float32(z-1),center[0],center[1],center[2])
+        twentysix_neighboring_points_dist[19] = calculate_distance(float32(x-1),float32(y+1),float32(z-1),center[0],center[1],center[2])
+        twentysix_neighboring_points_dist[20] = calculate_distance(float32(x-1),float32(y),float32(z+1),center[0],center[1],center[2])
+        twentysix_neighboring_points_dist[21] = calculate_distance(float32(x),float32(y-1),float32(z+1),center[0],center[1],center[2])
+        twentysix_neighboring_points_dist[22] = calculate_distance(float32(x-1),float32(y-1),float32(z+1),center[0],center[1],center[2])
 
-        twentysix_neighboring_points_dist[23] = calculate_distance(float64(x+1),float64(y+1),float64(z-1),center[0],center[1],center[2])
-        twentysix_neighboring_points_dist[24] = calculate_distance(float64(x+1),float64(y-1),float64(z+1),center[0],center[1],center[2])
-        twentysix_neighboring_points_dist[25] = calculate_distance(float64(x-1),float64(y+1),float64(z+1),center[0],center[1],center[2])
+        twentysix_neighboring_points_dist[23] = calculate_distance(float32(x+1),float32(y+1),float32(z-1),center[0],center[1],center[2])
+        twentysix_neighboring_points_dist[24] = calculate_distance(float32(x+1),float32(y-1),float32(z+1),center[0],center[1],center[2])
+        twentysix_neighboring_points_dist[25] = calculate_distance(float32(x-1),float32(y+1),float32(z+1),center[0],center[1],center[2])
 
         closest_point = twentysix_neighboring_points[0]
-        closest_dist = float64(twentysix_neighboring_points_dist[0])
+        closest_dist = float32(twentysix_neighboring_points_dist[0])
 
         for j,k in enumerate(twentysix_neighboring_points_dist):
-            if float64(k) < float64(closest_dist):
+            if float32(k) < float32(closest_dist):
 
                 closest_dist = k
                 closest_point = twentysix_neighboring_points[j]
@@ -124,19 +126,19 @@ def calcNeighborsKernel(points_array,\
         closest_y = closest_point[1]
         closest_z = closest_point[2]
 
-        if float64(memory_inmrc_thresholded[x][y][z]) < float64(cutoff_fsc):
+        if float32(memory_inmrc_thresholded[x][y][z]) < float32(cutoff_fsc):
                 outarraythresholded[x][y][z] = 0
                 memory_inmrc_thresholded[x][y][z] = 0
-        elif float64(memory_inmrc_thresholded[closest_x][closest_y][closest_z]) < float64(cutoff_fsc):
+        elif float32(memory_inmrc_thresholded[closest_x][closest_y][closest_z]) < float32(cutoff_fsc):
                 outarraythresholded[x][y][z] = 0
                 memory_inmrc_thresholded[x][y][z] = 0
         else:
                 outarraythresholded[x][y][z] = inputmrc[x][y][z]
 
-        if float64(memory_inmrc_thresholdedbinarized[x][y][z]) < float64(cutoff_binarize):
+        if float32(memory_inmrc_thresholdedbinarized[x][y][z]) < float32(cutoff_binarize):
                 outarraythresholdedbinarized[x][y][z] = 0
                 memory_inmrc_thresholdedbinarized[x][y][z] = 0
-        elif float64(memory_inmrc_thresholdedbinarized[closest_x][closest_y][closest_z]) < float64(cutoff_binarize):
+        elif float32(memory_inmrc_thresholdedbinarized[closest_x][closest_y][closest_z]) < float32(cutoff_binarize):
                 outarraythresholdedbinarized[x][y][z] = 0
                 memory_inmrc_thresholdedbinarized[x][y][z] = 0
         else:
@@ -165,7 +167,7 @@ def calcNeighbors(  points_array,\
     g_outarraythresholded = cuda.to_device(outarraythresholded)
     g_outarraythresholdedbinarized = cuda.to_device(outarraythresholdedbinarized)
     g_inputmrc = cuda.to_device(np.copy(inputmrc))
-    c = cuda.to_device(np.array([np.float64(center[0]),np.float64(center[1]),np.float64(center[2])]))
+    c = cuda.to_device(np.array([np.float32(center[0]),np.float32(center[1]),np.float32(center[2])]))
     cuda.synchronize()
     calcNeighborsKernel[blockspergrid,threadsperblock](g_points_array,\
                                                         c,\
@@ -198,20 +200,20 @@ def calcDistanceKernel(boxsize,center,out):
           + (cuda.threadIdx.z * (cuda.blockDim.x * cuda.blockDim.y)) \
           + (cuda.threadIdx.y * cuda.blockDim.x) \
           + cuda.threadIdx.x;
+
     if idx >= out.shape[0]:
         return
-
     out[idx,1] = (idx // (boxsize*boxsize))
     out[idx,2] = (idx %(boxsize*boxsize)) // boxsize
     out[idx,3] = idx % boxsize
 
-    out[idx,0] = math.sqrt( (out[idx,1] - numba.float64(center[0]))**2 + (out[idx,2] - numba.float64(center[1]))**2 + (out[idx,3] - numba.float64(center[2]))**2 )
+    out[idx,0] = math.sqrt( (out[idx,1] - numba.float32(center[0]))**2 + (out[idx,2] - numba.float32(center[1]))**2 + (out[idx,3] - numba.float32(center[2]))**2 )
 
 
 
 def calcDistance(boxsize,center):
     c = np.array([center[0],center[1],center[2]])
-    threadsperblock = (32,32,1)
+    threadsperblock = (32,1,1)
     start_time = time.time()
     blockspergrid = (math.ceil(boxsize/threadsperblock[0]), \
                      math.ceil(boxsize/threadsperblock[1]), \

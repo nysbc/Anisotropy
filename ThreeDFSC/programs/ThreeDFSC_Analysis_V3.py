@@ -39,6 +39,7 @@ from scipy.ndimage.filters import gaussian_filter
 import pdb
 import pickle
 import cuda_kernels
+import time
 
 ## Progress bar, adapted from https://gist.github.com/aubricus/f91fb55dc6ba5557fbab06119420dd6a
 
@@ -176,8 +177,6 @@ def threshold_binarize(inmrc, thresholded, thresholdedbinarized, FSCCutoff, Thre
         boxsize = inputmrc.shape[0]
         outarraythresholded = np.zeros((boxsize,)*3)
         outarraythresholdedbinarized = np.zeros((boxsize,)*3)
-        print("outarraythresholded.shape is ",outarraythresholded.shape)
-        print("outarraythresholdedbinarized.shape is ",outarraythresholdedbinarized.shape)
 
         # Find distance of all points to center
         #points_array = []
@@ -197,11 +196,12 @@ def threshold_binarize(inmrc, thresholded, thresholdedbinarized, FSCCutoff, Thre
         #print("points_array type is ",type(points_array))
 
         #assert (test == points_array).all()
-                
         # Sort array
-        points_array.sort()
-        print("type of points_array is ",type(points_array))
-        # Threshold each point locally
+        start_time = time.time()
+        sorted_indexes = np.lexsort((points_array[:,1],points_array[:,0]))
+        points_array = points_array[sorted_indexes]
+        print("Sorting time is ",time.time() - start_time)
+
         counter = 0
         total_iterations = len(points_array)
         number_of_progress_bar_updates = 200
@@ -209,7 +209,6 @@ def threshold_binarize(inmrc, thresholded, thresholdedbinarized, FSCCutoff, Thre
         
         memory_inmrc_thresholded = np.copy(inputmrc)
         memory_inmrc_thresholdedbinarized = np.copy(inputmrc)
-      
         outarraythresholded,outarraythresholdedbinarized = cuda_kernels.calcNeighbors(\
                     points_array,\
                     center,\
@@ -222,8 +221,6 @@ def threshold_binarize(inmrc, thresholded, thresholdedbinarized, FSCCutoff, Thre
                     memory_inmrc_thresholdedbinarized,\
                     outarraythresholded,\
                     outarraythresholdedbinarized)
-
-
         '''
         for i in points_array:
                 x = int(i[1])
@@ -433,10 +430,10 @@ def HistogramCreation(histogram_sampling,histogram,ThreeDFSC,apix,cutoff,spheric
         ## Calculate Sum of Standard Deviation
         ## http://stats.stackexchange.com/questions/25848/how-to-sum-a-standard-deviation
         
-        sumofvar = 0
-        for a in stddev:
-                sumofvar += a ** 2
-        sumofstd = sqrt(sumofvar)
+        #sumofvar = 0
+        #for a in stddev:
+        #        sumofvar += a ** 2
+        #sumofstd = sqrt(sumofvar)
         
         #print ("\n\n")
         #print ("Sum of Standard Deviation is %s" % sumofstd)
@@ -574,6 +571,8 @@ def check_globalFSC(ThreeDFSC,apix):
 def main(halfmap1,halfmap2,fullmap,apix,ThreeDFSC,dthetaInDegrees,histogram,FSCCutoff,ThresholdForSphericity,HighPassFilter):
         # Part 00
         # Warnings and checks. Invisible to user unless something is wrong
+        print("ThreeDFSC is ",ThreeDFSC)
+        print("apix is ",apix)
         global_resolution = check_globalFSC(ThreeDFSC,apix)
 
         # Part 01

@@ -674,7 +674,7 @@ def AveragesOnShellsUsingLogicB(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR,kZo
         #if ((r-1)%5)==0: 
         #    print("NumAtROutPre created in %f seconds, retofROutRPre  in %f seconds for size r=%g " \
         #        % (deltaTimeN,deltaTime,r))
-
+    
     return [retofROutR, retofROutI, n1ofROut,n2ofROut,NumAtROut]
 
     
