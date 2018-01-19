@@ -490,7 +490,10 @@ def AveragesOnShellsInnerLogicCCuda(\
                                     End,\
                                     Start,\
                                     NumOnSurf,\
-                                    r):
+                                    r,temp_retofROutR,
+                                      temp_retofROutI,
+                                      temp_n1ofROut,
+                                      temp_n2ofROut):
 
     threadsperblock = (1024,1,1)
     blockspergrid_x = int(math.ceil(retNowR_global_mem[r][:NumOnSurf].shape[0]/threadsperblock[0]))
@@ -498,9 +501,9 @@ def AveragesOnShellsInnerLogicCCuda(\
     # set up stream
     stream = cuda.stream()
     device_array_start = time.time()
-    reduced_global_mem = cuda.device_array((4,(End-Start)))
-    print("Shape of NumAtROutPre_global_mem is ",NumAtROutPre_global_mem.shape)
-    print("Shape of reduced_global_mem is ",reduced_global_mem.shape)
+  #  reduced_global_mem = cuda.device_array((4,(End-Start)))
+  #  print("Shape of NumAtROutPre_global_mem is ",NumAtROutPre_global_mem.shape)
+  #  print("Shape of reduced_global_mem is ",reduced_global_mem.shape)
     #print("Time to create cuda.device_array is ",time.time() - device_array_start)
     filter_time = time.time()
     cuda_kernels.filter_and_sum[threadsperblock,blockspergrid](\
@@ -509,18 +512,22 @@ def AveragesOnShellsInnerLogicCCuda(\
         n1ofR_global_mem,\
         n2ofR_global_mem,\
         NumAtROutPre_global_mem,\
-        reduced_global_mem,\
+ #       reduced_global_mem,\
         End,\
         Start,\
         NumOnSurf,\
-        r)
+        r,temp_retofROutR,
+          temp_retofROutI,
+          temp_n1ofROut,
+          temp_n2ofROut
+          )
     stream.synchronize()
     print("Time to complete filter_and_sum is ",time.time() - filter_time)
-    reduced_start = time.time()
-    reduced = reduced_global_mem.copy_to_host()
-    print("Time to transfer reduced to host is ",time.time() - reduced_start)
+    #reduced_start = time.time()
+    #reduced = reduced_global_mem.copy_to_host()
+    #print("Time to transfer reduced to host is ",time.time() - reduced_start)
 
-    return reduced
+    #return reduced
 
 
 
@@ -554,14 +561,22 @@ def AveragesOnShellsUsingLogicB(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR,kZo
                                     NumAtEachR,Thresh, RMax):
     print('This loop will go to '+str(RMax)+'\n' )    
     NumAtEachRMax=NumAtEachR[-1];
+    #retofROutR = np.zeros([inc+1,NumAtEachRMax]); #retofRR.copy();# Real part of output
+    #retofROutI = np.zeros([inc+1,NumAtEachRMax]); #retofRI.copy();# Imag part of output
+    #n1ofROut   = np.zeros([inc+1,NumAtEachRMax]); #n1ofR.copy();
+    #n2ofROut   = np.zeros([inc+1,NumAtEachRMax]); #n2ofR.copy();
+    #NumAtROut  = np.zeros([inc+1,NumAtEachRMax]); #
+
     retofROutR = np.zeros([inc+1,NumAtEachRMax]); #retofRR.copy();# Real part of output
     retofROutI = np.zeros([inc+1,NumAtEachRMax]); #retofRI.copy();# Imag part of output
     n1ofROut   = np.zeros([inc+1,NumAtEachRMax]); #n1ofR.copy();
     n2ofROut   = np.zeros([inc+1,NumAtEachRMax]); #n2ofR.copy();
     NumAtROut  = np.zeros([inc+1,NumAtEachRMax]); #
 
+
     print("shape of retofROutR is ",np.shape(retofROutR))
     NumAtEachRMaxCuda= 15871;
+    NumAtEachRMaxCuda = 20000;
     
     retofROutR[0,0] = retofRR[0,0];
     retofROutI[0,0] = retofRI[0,0];
@@ -580,19 +595,32 @@ def AveragesOnShellsUsingLogicB(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR,kZo
     retofRI_global_mem = cuda.to_device(np.ascontiguousarray(retofRI,dtype=np.float32))
     n1ofR_global_mem = cuda.to_device(np.ascontiguousarray(n1ofR,dtype=np.float32))
     n2ofR_global_mem = cuda.to_device(np.ascontiguousarray(n2ofR,dtype=np.float32))
+
+    temp_retofROutR = cuda.to_device(np.ascontiguousarray(np.zeros(shape=(retofROutR[0].shape)),dtype=np.float32))
+    temp_retofROutI = cuda.to_device(np.ascontiguousarray(np.zeros(shape=(retofROutI[0].shape)),dtype=np.float32))
+    temp_n1ofROut   = cuda.to_device(np.ascontiguousarray(np.zeros(shape=(n1ofROut[0].shape)),dtype=np.float32))
+    temp_n2ofROut   = cuda.to_device(np.ascontiguousarray(np.zeros(shape=(n2ofROut[0].shape)),dtype=np.float32))
+    temp_NumAtROut  = cuda.to_device(np.ascontiguousarray(np.zeros(shape=(NumAtROut[0].shape)),dtype=np.float32))
+
+    print("Shape of temp_retofROutR is ",temp_retofROutR.shape)
+    print("Shape of temp_retofROutI is ",temp_retofROutI.shape)
+    print("Shape of temp_n1ofROut is ",temp_n1ofROut.shape)
+    print("Shape of temp_n2ofROut is ",temp_n2ofROut.shape)
+    print("Shape of temp_NumAtROut is ",temp_NumAtROut.shape)
+
     enablePrint()
     for r in range(1,RMax+1):#range(1,inc+1):
         #if r!=2: continue
         #if ((r-1)%5)==0: print(r)
         NumOnSurf = int(NumAtEachR[r]);
         #LastInd = NumAtEachR[r]-1 ;
-        kXNow    = kXofR[r][:NumOnSurf]; 
-        kYNow    = kYofR[r][:NumOnSurf]; 
-        kZNow    = kZofR[r][:NumOnSurf];#     Vectors
-        retNowR = retofRR[r][:NumOnSurf];  
-        retNowI = retofRI[r][:NumOnSurf]; 
-        n1Now    = n1ofR[r][:NumOnSurf]; 
-        n2Now    = n2ofR[r][:NumOnSurf];#   for given 
+        #kXNow    = kXofR[r][:NumOnSurf]; 
+        #kYNow    = kYofR[r][:NumOnSurf]; 
+        #kZNow    = kZofR[r][:NumOnSurf];#     Vectors
+        #retNowR = retofRR[r][:NumOnSurf];  
+        #retNowI = retofRI[r][:NumOnSurf]; 
+        #n1Now    = n1ofR[r][:NumOnSurf]; 
+        #n2Now    = n2ofR[r][:NumOnSurf];#   for given 
 
 
         ## Progress bar
@@ -608,6 +636,7 @@ def AveragesOnShellsUsingLogicB(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR,kZo
         stream = cuda.stream()
         NumAtROutPre_global_mem = cuda.device_array((NumOnSurf,Stride))
         Prod11_global_mem = cuda.device_array(NumOnSurf,stream=stream,dtype=np.float32)
+        sum_array_global_mem = cuda.device_array((Stride))
         for jLoop in range(NumLoops):
 
             Start=jLoop*Stride;
@@ -647,7 +676,7 @@ def AveragesOnShellsUsingLogicB(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR,kZo
             LogicCCuda_start = startTime
             #cuda.synchronize()
 
-            reduced = AveragesOnShellsInnerLogicCCuda(\
+            AveragesOnShellsInnerLogicCCuda(\
                                                       retofRR_global_mem,\
                                                       retofRI_global_mem,\
                                                       n1ofR_global_mem,\
@@ -656,20 +685,29 @@ def AveragesOnShellsUsingLogicB(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR,kZo
                                                       End,\
                                                       Start,\
                                                       NumOnSurf,\
-                                                      r)
+                                                      r,temp_retofROutR,
+                                                        temp_retofROutI,
+                                                        temp_n1ofROut,
+                                                        temp_n2ofROut)
             stream = cuda.stream() 
             cuda.synchronize()
             print("\nTime to complete AveragesOnShellsInnerLogicCCuda is ",time.time()-LogicCCuda_start)
 
-            retofROutR[r][Start:End] = reduced[0]
-            retofROutI[r][Start:End] = reduced[1]
-            n1ofROut[r][Start:End]   = reduced[2]
-            n2ofROut[r][Start:End]   = reduced[3]
+            #temp_retofROutR[Start:End] = reduced[0]
+            #temp_retofROutI[Start:End] = reduced[1]
+            #temp_n1ofROut[Start:End]   = reduced[2]
+            #temp_n2ofROut[Start:End]   = reduced[3]
             
             sum_start = time.time()
             print("Dimensions of NumAtROutPre_global_mem are ",NumAtROutPre_global_mem.shape)
-            NumAtROut[r][Start:End] = cuda_kernels.sum_rows(NumAtROutPre_global_mem,Start,End)
+            cuda_kernels.sum_rows(NumAtROutPre_global_mem,sum_array_global_mem,Start,End,temp_NumAtROut)
             print("Time to compute sum_rows on GPU: ",time.time()-sum_start)
+        retofROutR[r] = temp_retofROutR.copy_to_host()
+        retofROutI[r] = temp_retofROutI.copy_to_host()
+        n1ofROut[r] = temp_n1ofROut.copy_to_host()
+        n2ofROut[r] = temp_n2ofROut.copy_to_host()
+        NumAtROut[r] = temp_NumAtROut.copy_to_host()
+
         deltaTime =time.time()-startTime;
         #if ((r-1)%5)==0: 
         #    print("NumAtROutPre created in %f seconds, retofROutRPre  in %f seconds for size r=%g " \

@@ -229,21 +229,20 @@ def calcDistance(boxsize,center):
 
 
 def sum_rows(\
-             NumAtROutPre_global_mem,Start,End):
+             NumAtROutPre_global_mem,sum_array_global_mem,Start,End,temp_NumAtROut):
 
     threadsperblock = (32,1,1)
     blockspergrid_x = (math.ceil(NumAtROutPre_global_mem.shape[0]/threadsperblock[0]))
     blockspergrid = (blockspergrid_x,1,1)
 
-    sum_array_global_mem = cuda.device_array((End-Start))
-    sum_rowsKernel[blockspergrid,threadsperblock](NumAtROutPre_global_mem,sum_array_global_mem,Start,End)
+    #sum_array_global_mem = cuda.device_array((End-Start))
+    sum_rowsKernel[blockspergrid,threadsperblock](NumAtROutPre_global_mem,sum_array_global_mem,Start,End,temp_NumAtROut)
 
-    return sum_array_global_mem.copy_to_host()
 
 @cuda.jit
 def sum_rowsKernel(\
              NumAtROutPre_global_mem,
-             sum_array_global_mem,Start,End):
+             sum_array_global_mem,Start,End,temp_NumAtROut):
 
   x = cuda.grid(1)
   if (x>= (NumAtROutPre_global_mem.shape[1])):
@@ -254,6 +253,7 @@ def sum_rowsKernel(\
     temp_sum += NumAtROutPre_global_mem[i,x]
 
   sum_array_global_mem[x] = temp_sum
+  temp_NumAtROut[Start:End] = temp_sum
 
 @cuda.jit
 def filter_and_sum(\
@@ -262,11 +262,14 @@ def filter_and_sum(\
                    n1ofR_global_mem,\
                    n2ofR_global_mem,\
                    NumAtROutPre,\
-                   reduced,\
+     #              reduced,\
                    End,\
                    Start,\
                    NumOnSurf,\
-                   r):
+                   r,temp_retofROutR,
+                     temp_retofROutI,
+                     temp_n1ofROut,
+                     temp_n2ofROut):
     #retNowR = retofRR_global_mem[r][:NumOnSurf]
     #retNowI = retofRI_global_mem[r][:NumOnSurf]
     #n1Now = n1ofR_global_mem[r][:NumOnSurf]
@@ -290,11 +293,20 @@ def filter_and_sum(\
         n1ofROutPre += n1ofR_global_mem[r][i]*MultVec[i]
         n2ofROutPre += n2ofR_global_mem[r][i]*MultVec[i]
 
-    reduced[0,x] = retofROutRPre
-    reduced[1,x] = retofROutIPre
-    reduced[2,x] = n1ofROutPre
-    reduced[3,x] = n2ofROutPre
+    #reduced[0,x] = retofROutRPre
+    #reduced[1,x] = retofROutIPre
+    #reduced[2,x] = n1ofROutPre
+    #reduced[3,x] = n2ofROutPre
 
+    temp_retofROutR[Start:End] = retofROutRPre
+    temp_retofROutI[Start:End] = retofROutIPre
+    temp_n1ofROut[Start:End] = n1ofROutPre
+    temp_n2ofROut[Start:End] = n2ofROutPre
+
+    #temp_retofROutR[Start:End] = reduced[0,x]
+    #temp_retofROutI[Start:End] = reduced[1,x]
+    #temp_n1ofROut[Start:End] = reduced[2,x]
+    #temp_n2ofROut[Start:End] = reduced[3,x]
 
 
 # CUDA kernel
