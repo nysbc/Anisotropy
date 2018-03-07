@@ -8,10 +8,8 @@ import time
 import pdb
 
 @cuda.jit('float32(float32,float32,float32,float32,float32,float32)',device=True)
-#def calculate_distance(p1,p2):
 def calculate_distance(p1_0,p1_1,p1_2,p2_0,p2_1,p2_2):
         return math.sqrt( (p1_0 - p2_0)**2 + (p1_1 - p2_1)**2 + (p1_2 - p2_2)**2)
-        #return math.sqrt( (float32(p1[0]) - float(p2[0]))**2 + (float(p1[1]) - float(p2[1]))**2 + (float(p1[2]) - float(p2[2]))**2)
 
 @cuda.jit
 def calcNeighborsKernel(points_array,\
@@ -50,8 +48,6 @@ def calcNeighborsKernel(points_array,\
         memory_inmrc_thresholdedbinarized[x][y][z] = 0
 
     else:
-        #dist = calculate_distance(x-1,y,z,center[0],center[1],center[2])
-        #twentysix_neighboring_points[0] = [dist,x-1,y,z]
         twentysix_neighboring_points[0] = (x-1,y,z)
         twentysix_neighboring_points[1] = (x,y-1,z)
         twentysix_neighboring_points[2] = (x,y,z-1)
@@ -156,11 +152,9 @@ def calcNeighbors(  points_array,\
                     outarraythresholded,\
                     outarraythresholdedbinarized):
     threadsperblock = (512,1,1)
-    #threadsperblock = (8,1,1)
     blockspergrid = (math.ceil(points_array.shape[0]/threadsperblock[0]),1,1)
     start_time = time.time()
     g_points_array = cuda.to_device(points_array)
-    #g_inputmrc = cuda.to_device(inputmrc)
     stream = cuda.stream()
     g_memory_inmrc_thresholded = cuda.to_device(memory_inmrc_thresholded)
     g_memory_inmrc_thresholdedbinarized = cuda.to_device(memory_inmrc_thresholdedbinarized)
