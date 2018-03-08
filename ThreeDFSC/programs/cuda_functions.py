@@ -90,17 +90,10 @@ def AveragesOnShellsUsingLogicBCuda(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR
                                                                            r);
             print("Time to complete InnerLogicKernelCuda is ",time.time()-InnerLogicCuda_start)
 
-            #InnerLogicnonCuda_start = time.time()
-            #NumAtROutPre = AveragesOnShellsInnerLogicKernelnonCuda(kXNow,kYNow,kZNow, NumOnSurf, Thresh,Start, End);
-            #print("Time to complete InnerLogicKernelnonCuda is ",time.time()-InnerLogicnonCuda_start)
-
             deltaTimeN =time.time()-startTime;
-            #print("sum, sum of NumAtROutPre = %g " %(np.sum(np.sum(NumAtROutPre,axis=0))));
-            #print("how many zeros of NumAtROutPre = %g " %(len(np.where(NumAtROutPre==0)[0] ) ) );
             startTime = time.time()
 
             LogicCCuda_start = startTime
-            #cuda.synchronize()
 
             reduced = AveragesOnShellsInnerLogicCCuda(\
                                                       retofRR_global_mem,\
@@ -246,16 +239,12 @@ def threshold_binarize_array_cuda(dataarray, FSCCutoff, ThresholdForSphericity, 
         cutoff_binarize = float(ThresholdForSphericity)
         min_cutoff = min(cutoff_fsc,cutoff_binarize)
 
-        ## Read MRC
-        #inputmrc = (mrcfile.open(inmrc)).data
-
         # Coordinates
-        #center = (inputmrc.shape[0]/2,inputmrc.shape[1]/2,inputmrc.shape[2]/2)
         center = (dataarray.shape[0]/2,dataarray.shape[1]/2,dataarray.shape[2]/2)
         #radius = int(inputmrc.shape[0]/2 + 0.5)
 
         # Fill up new np array
-        boxsize = inputmrc.shape[0]
+        boxsize = dataarray.shape[0]
         outarraythresholded = np.zeros((boxsize,)*3)
         outarraythresholdedbinarized = np.zeros((boxsize,)*3)
 
@@ -271,8 +260,8 @@ def threshold_binarize_array_cuda(dataarray, FSCCutoff, ThresholdForSphericity, 
         number_of_progress_bar_updates = 200
         iterations_per_progress_bar_update = int(total_iterations/number_of_progress_bar_updates)
 
-        memory_inmrc_thresholded = np.copy(inputmrc)
-        memory_inmrc_thresholdedbinarized = np.copy(inputmrc)
+        memory_inmrc_thresholded = np.copy(dataarray)
+        memory_inmrc_thresholdedbinarized = np.copy(dataarray)
         outarraythresholded,outarraythresholdedbinarized = cuda_kernels.calcNeighbors(\
                     points_array,\
                     center,\
@@ -280,7 +269,7 @@ def threshold_binarize_array_cuda(dataarray, FSCCutoff, ThresholdForSphericity, 
                     cutoff_binarize,\
                     highpassfilter,\
                     min_cutoff,\
-                    inputmrc,\
+                    dataarray,\
                     memory_inmrc_thresholded,\
                     memory_inmrc_thresholdedbinarized,\
                     outarraythresholded,\
@@ -288,17 +277,4 @@ def threshold_binarize_array_cuda(dataarray, FSCCutoff, ThresholdForSphericity, 
 
 
         return outarraythresholded,outarraythresholdedbinarized
-
-        #mrc_write = mrcfile.new(thresholded,overwrite=True)
-        #mrc_write.set_data(outarraythresholded.astype('<f4'))
-        #mrc_write.voxel_size = (float(apix),float(apix),float(apix))
-        #mrc_write.update_header_from_data()
-        #mrc_write.close()
-
-        #mrc_write = mrcfile.new(thresholdedbinarized,overwrite=True)
-        #mrc_write.set_data(outarraythresholdedbinarized.astype('<f4'))
-        #mrc_write.voxel_size = (float(apix),float(apix),float(apix))
-        #mrc_write.update_header_from_data()
-        #mrc_write.close()
-
 
