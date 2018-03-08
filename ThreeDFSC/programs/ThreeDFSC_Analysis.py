@@ -46,6 +46,7 @@ from scipy.ndimage.filters import gaussian_filter
 import time
 
 import cuda_kernels
+import cuda_functions
 
 def cartesian_to_spherical(vector):
         """Convert the Cartesian vector [x, y, z] to spherical coordinates [r, theta, phi].
