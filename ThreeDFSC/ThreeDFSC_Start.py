@@ -59,96 +59,103 @@ start_program_time = time.time()
 # Check Anaconda version
 
 def masking(inmrc,mask,masked_outmrc):
-	inputmrc = (mrcfile.open(inmrc)).data
-	mask = (mrcfile.open(mask)).data
-	outarray = np.multiply(inputmrc,mask)
-	
-	mrc_write = mrcfile.new(masked_outmrc,overwrite=True)
-	mrc_write.set_data(outarray.astype('<f4'))
-	mrc_write.close()
-	return os.path.abspath(str(masked_outmrc))
+    inputmrc = (mrcfile.open(inmrc)).data
+    mask = (mrcfile.open(mask)).data
+    outarray = np.multiply(inputmrc,mask)
+    
+    mrc_write = mrcfile.new(masked_outmrc,overwrite=True)
+    mrc_write.set_data(outarray.astype('<f4'))
+    mrc_write.close()
+    return os.path.abspath(str(masked_outmrc))
 
 def execute(options):
-	click.echo(click.style("Welcome to 3DFSC Program Suite Version %s" % version,fg="blue"))
-	click.echo(click.style("Downloaded from https://github.com/nysbc/Anisotropy"))
-	click.echo(click.style("Published article at http://doi.org/10.1038/nmeth.4347"))
-	click.echo(click.style("Anaconda 3 is required to run this program, and UCSF Chimera to visualize some outputs. Please install them if they are not present."))
-	click.echo(click.style("Please be patient: Program usually finishes in minutes, but can take up to hours to run for extremely large box sizes."))
-	
-	# Part 00: Check and Administration
-	
-	# Check required inputs
-	if (None in (options.halfmap1, options.halfmap2, options.fullmap, options.apix)):
-			click.echo(click.style("\nError: A required input is missing.\n",fg="red"))
-			parser.print_help()
-			sys.exit()
-	
-	# Convert file paths to absolutes
-	halfmap1_pre = os.path.abspath(str(options.halfmap1))
-	halfmap2_pre = os.path.abspath(str(options.halfmap2))
-	fullmap = os.path.abspath(str(options.fullmap))
-	
-	# Masking
-	if (bool(options.mask) == False):
-			halfmap1 = halfmap1_pre
-			halfmap2 = halfmap2_pre
-	else:
-			mask = os.path.abspath(str(options.mask))
-			halfmap1 = masking(options.halfmap1,mask,options.halfmap1[:-4] + "_masked.mrc")
-			halfmap2 = masking(options.halfmap2,mask,options.halfmap2[:-4] + "_masked.mrc")
-			print ("\nMasking performed: " + options.halfmap1[:-4] + "_masked.mrc and " + options.halfmap2[:-4] + "_masked.mrc generated.")
-	
-	# Check half maps are unique
-	if halfmap1 == halfmap2:
-			click.echo(click.style("\nError: Both your half maps point to the same file.\n",fg="red"))
-			sys.exit()
+    if not options.numThresholdsForSphericityCalcs:
+        options.numThresholdsForSphericityCalcs = 0
 
-	# Make sure half maps are the same size
-	h1 = mrcfile.open(halfmap1).data
-	h2 = mrcfile.open(halfmap2).data
-	[nxf,nyf,nzf] = h1.shape
-	[nxg,nyg,nzg] = h2.shape
-	if nxf != nxg or nyf != nyg or nzf !=nzg:
-		click.echo(click.style("\nError: Half maps are not the same size, check your inputs.\n",fg="red"))
-		sys.exit()
-		
-	# Check numThresholdsForSphericityCalcs is bigger than 0
-	if options.numThresholdsForSphericityCalcs < 1 and options.numThresholdsForSphericityCalcs != 0:
-		click.echo(click.style("\nError: Please key in a positive integer for the --numThresholdsForSphericityCalcs option.\n",fg="red"))
-		sys.exit()
+    click.echo(click.style("Welcome to 3DFSC Program Suite Version %s" % version,fg="blue"))
+    click.echo(click.style("Downloaded from https://github.com/nysbc/Anisotropy"))
+    click.echo(click.style("Published article at http://doi.org/10.1038/nmeth.4347"))
+    click.echo(click.style("Anaconda 3 is required to run this program, and UCSF Chimera to visualize some outputs. Please install them if they are not present."))
+    click.echo(click.style("Please be patient: Program usually finishes in minutes, but can take up to hours to run for extremely large box sizes."))
+    
+    # Part 00: Check and Administration
+    
+    # Check required inputs
+    if (None in (options.halfmap1, options.halfmap2, options.fullmap, options.apix)):
+            click.echo(click.style("\nError: A required input is missing.\n",fg="red"))
+            parser.print_help()
+            sys.exit()
+    
+    # Convert file paths to absolutes
+    halfmap1_pre = os.path.abspath(str(options.halfmap1))
+    halfmap2_pre = os.path.abspath(str(options.halfmap2))
+    fullmap = os.path.abspath(str(options.fullmap))
+    
+    # Masking
+    if (bool(options.mask) == False):
+            halfmap1 = halfmap1_pre
+            halfmap2 = halfmap2_pre
+    else:
+            mask = os.path.abspath(str(options.mask))
+            halfmap1 = masking(options.halfmap1,mask,options.halfmap1[:-4] + "_masked.mrc")
+            halfmap2 = masking(options.halfmap2,mask,options.halfmap2[:-4] + "_masked.mrc")
+            print ("\nMasking performed: " + options.halfmap1[:-4] + "_masked.mrc and " + options.halfmap2[:-4] + "_masked.mrc generated.")
+    
+    # Check half maps are unique
+    if halfmap1 == halfmap2:
+            click.echo(click.style("\nError: Both your half maps point to the same file.\n",fg="red"))
+            sys.exit()
 
-	# Part 01
-	if (options.Skip3DFSCGeneration == "False"):
-			click.echo(click.style("\nStep 01: Generating 3DFSC Volume",fg="blue"))
-			ThreeDFSC_ReleaseAug2017.main(halfmap1,halfmap2,options.ThreeDFSC,options.apix,options.dthetaInDegrees,gpu=options.gpu)
-			directory = "Results_" + options.ThreeDFSC
-			if not os.path.exists(directory):
-				os.makedirs(directory)
-			os.system("cp Results_" + options.ThreeDFSC + "/ResEM" + options.ThreeDFSC + "Out.mrc Results_" + options.ThreeDFSC + "/" + options.ThreeDFSC + ".mrc")
+    # Make sure half maps are the same size
+    h1 = mrcfile.open(halfmap1).data
+    h2 = mrcfile.open(halfmap2).data
+    [nxf,nyf,nzf] = h1.shape
+    [nxg,nyg,nzg] = h2.shape
+    if nxf != nxg or nyf != nyg or nzf !=nzg:
+        click.echo(click.style("\nError: Half maps are not the same size, check your inputs.\n",fg="red"))
+        sys.exit()
+        
+    # Check numThresholdsForSphericityCalcs is bigger than 0
+    if options.numThresholdsForSphericityCalcs < 1 and options.numThresholdsForSphericityCalcs != 0:
+        click.echo(click.style("\nError: Please key in a positive integer for the --numThresholdsForSphericityCalcs option.\n",fg="red"))
+        sys.exit()
 
-			print ("3DFSC Results_" + options.ThreeDFSC + "/" + options.ThreeDFSC + ".mrc generated.")
-	elif (options.Skip3DFSCGeneration == "True"):
-			click.echo(click.style("\nStep 01: Skipped",fg="blue"))
-			print ("Using pre-existing 3DFSC volume and output files.")
-			if os.path.isfile("Results_" + options.ThreeDFSC + "/ResEM" + options.ThreeDFSC + "OutglobalFSC.csv") == False:
-					click.echo(click.style("Results_" + options.ThreeDFSC + "/ResEM" + options.ThreeDFSC + "OutglobalFSC.csv missing! Please re-run entire 3DFSC program to generate the files needed for analysis.\n",fg="red"))
-					sys.exit()
-			elif os.path.isfile("Results_" + options.ThreeDFSC + "/ResEM" + options.ThreeDFSC + "Out.mrc") == False:
-					click.echo(click.style("Results_" + options.ThreeDFSC + "/ResEM" + options.ThreeDFSC + "Out.mrc missing! Please re-run entire 3DFSC program to generate the files needed for analysis.\n",fg="red"))
-					sys.exit()
-			else:
-					os.system("cp Results_" + options.ThreeDFSC + "/ResEM" + options.ThreeDFSC + "Out.mrc Results_" + options.ThreeDFSC + "/" + options.ThreeDFSC + ".mrc")
-	else:
-			click.echo(click.style("\nPlease key in either True or False for --Skip3DFSCGeneration option.\n",fg="red"))
-			sys.exit()
-	
-	# Part 02
-	click.echo(click.style("\nStep 02: Generating Analysis Files",fg="blue"))
-	print ("\nDone")
-	print ("Results are in the folder Results_" + str(options.ThreeDFSC))
-	print ("--- %s seconds ---" % (time.time() - start_program_time))
-	print ("Please email prbprb2@gmail.com, ytan@nysbc.org and dlyumkis@salk.edu if there are any problems/suggestions. Thank you.\n")
-	return
+    # Part 01
+    if (options.Skip3DFSCGeneration == "False"):
+            click.echo(click.style("\nStep 01: Generating 3DFSC Volume",fg="blue"))
+            ThreeDFSC_ReleaseAug2017.main(halfmap1,halfmap2,options.ThreeDFSC,options.apix,options.dthetaInDegrees,gpu=options.gpu)
+            directory = "Results_" + options.ThreeDFSC
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+            os.system("cp Results_" + options.ThreeDFSC + "/ResEM" + options.ThreeDFSC + "Out.mrc Results_" + options.ThreeDFSC + "/" + options.ThreeDFSC + ".mrc")
+
+            print ("3DFSC Results_" + options.ThreeDFSC + "/" + options.ThreeDFSC + ".mrc generated.")
+    elif (options.Skip3DFSCGeneration == "True"):
+            click.echo(click.style("\nStep 01: Skipped",fg="blue"))
+            print ("Using pre-existing 3DFSC volume and output files.")
+            if os.path.isfile("Results_" + options.ThreeDFSC + "/ResEM" + options.ThreeDFSC + "OutglobalFSC.csv") == False:
+                    click.echo(click.style("Results_" + options.ThreeDFSC + "/ResEM" + options.ThreeDFSC + "OutglobalFSC.csv missing! Please re-run entire 3DFSC program to generate the files needed for analysis.\n",fg="red"))
+                    sys.exit()
+            elif os.path.isfile("Results_" + options.ThreeDFSC + "/ResEM" + options.ThreeDFSC + "Out.mrc") == False:
+                    click.echo(click.style("Results_" + options.ThreeDFSC + "/ResEM" + options.ThreeDFSC + "Out.mrc missing! Please re-run entire 3DFSC program to generate the files needed for analysis.\n",fg="red"))
+                    sys.exit()
+            else:
+                    os.system("cp Results_" + options.ThreeDFSC + "/ResEM" + options.ThreeDFSC + "Out.mrc Results_" + options.ThreeDFSC + "/" + options.ThreeDFSC + ".mrc")
+    else:
+            click.echo(click.style("\nPlease key in either True or False for --Skip3DFSCGeneration option.\n",fg="red"))
+            sys.exit()
+    
+    # Part 02
+    click.echo(click.style("\nStep 02: Generating Analysis Files",fg="blue"))
+    ThreeDFSC_Analysis.main(halfmap1,halfmap2,fullmap,options.apix,options.ThreeDFSC,\
+                            options.dthetaInDegrees,options.histogram,options.FSCCutoff,\
+                            options.ThresholdForSphericity,options.HighPassFilter,\
+                            options.numThresholdsForSphericityCalcs,options.gpu)
+    print ("\nDone")
+    print ("Results are in the folder Results_" + str(options.ThreeDFSC))
+    print ("--- %s seconds ---" % (time.time() - start_program_time))
+    print ("Please email prbprb2@gmail.com, ytan@nysbc.org and dlyumkis@salk.edu if there are any problems/suggestions. Thank you.\n")
+    return
 
 if __name__ == '__main__':
 
