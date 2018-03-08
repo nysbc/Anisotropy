@@ -14,7 +14,8 @@ def print_progress(iteration, total, prefix='', suffix='', decimals=1):
         bar_length    - Optional    : character length of bar (Int)
     """
 
-    rows, columns = os.popen('stty size', 'r').read().split()
+    #rows, columns = os.popen('stty size', 'r').read().split()
+    columns = 40
     bar_length = int(float(columns)/2)
     str_format = "{0:." + str(decimals) + "f}"
     percents = str_format.format(100 * (iteration / float(total)))
