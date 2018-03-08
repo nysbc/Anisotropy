@@ -6,7 +6,7 @@
 ### 3D FSC Software Wrapper
 ### Written by Philip Baldwin
 ### Edited by Yong Zi Tan and Dmitry Lyumkis
-### Anaconda environment by Carl Negro
+### Anaconda environment and Numba CUDA support by Carl Negro
 ### Downloaded from https://github.com/nysbc/Anisotropy
 ### git clone https://github.com/nysbc/Anisotropy.git
 ### 
@@ -18,7 +18,7 @@
 ### 1) UCSF Chimera, especially Tom Goddard
 ### 2) mrcfile 1.0.0 by Colin Palmer (https://github.com/ccpem/mrcfile)
 ###
-### Version 2.5 (5 September 2017)
+### Version 3.0 (7 March 2018)
 ### 
 ### Revisions 
 ### 1.1 - Added mpl.use('Agg') to allow matplotlib to be used without X-server
@@ -30,7 +30,9 @@
 ### 2.3 - Fixed various bugs, new thresholding algorithm, added progress bar, improved Chimera plotting, more error checking
 ### 2.4 - Incorporation with website, use Click package
 ### 2.5 - Outputs raw histogram data
-version = "2.5"
+### 3.0 - Add Numba CUDA support
+
+version = "3.0"
 ### ============================
 
 #pythonlib
@@ -47,12 +49,12 @@ import click
 # add the programs submodule directory to the path so we can import its files from anywhere
 sys.path.insert(0,os.path.join(os.path.dirname(os.path.abspath(__file__)),'programs'))
 import ThreeDFSC_ReleaseAug2017
-import ThreeDFSC_Analysis # Version 5.0 Latest
+import ThreeDFSC_Analysis # Version 6.0 Latest
 
 #saveout = sys.stdout
 #sys.stdout = open('threedfscstdout.log', 'w')
 
-start_time = time.time()
+start_program_time = time.time()
 
 # Check Anaconda version
 
@@ -118,7 +120,7 @@ def execute(options):
 	# Part 01
 	if (options.Skip3DFSCGeneration == "False"):
 			click.echo(click.style("\nStep 01: Generating 3DFSC Volume",fg="blue"))
-			ThreeDFSC_ReleaseAug2017.main(halfmap1,halfmap2,options.ThreeDFSC,options.apix,options.dthetaInDegrees)
+			ThreeDFSC_ReleaseAug2017.main(halfmap1,halfmap2,options.ThreeDFSC,options.apix,options.dthetaInDegrees,gpu=options.gpu)
 			directory = "Results_" + options.ThreeDFSC
 			if not os.path.exists(directory):
 				os.makedirs(directory)
@@ -142,10 +144,9 @@ def execute(options):
 	
 	# Part 02
 	click.echo(click.style("\nStep 02: Generating Analysis Files",fg="blue"))
-	ThreeDFSC_Analysis.main(halfmap1,halfmap2,fullmap,options.apix,options.ThreeDFSC,options.dthetaInDegrees,options.histogram,options.FSCCutoff,options.ThresholdForSphericity,options.HighPassFilter,options.numThresholdsForSphericityCalcs)
 	print ("\nDone")
 	print ("Results are in the folder Results_" + str(options.ThreeDFSC))
-	print ("--- %s seconds ---" % (time.time() - start_time))
+	print ("--- %s seconds ---" % (time.time() - start_program_time))
 	print ("Please email prbprb2@gmail.com, ytan@nysbc.org and dlyumkis@salk.edu if there are any problems/suggestions. Thank you.\n")
 	return
 
@@ -170,6 +171,10 @@ if __name__ == '__main__':
     parser.add_option("--Skip3DFSCGeneration", dest="Skip3DFSCGeneration", action="store", type="string", default="False", help="Allows for skipping of 3DFSC generation to directly run the analysis on a previously generated set of results.", metavar="True or False")
     parser.add_option("--numThresholdsForSphericityCalcs", dest="numThresholdsForSphericityCalcs", action="store", type="int", default=0, help="calculate sphericities at different threshold cutoffs to determine sphericity deviation across spatial frequencies. This can be useful to evaluate possible effects of overfitting or improperly assigned orientations.", metavar="INT")
 
+    parser.add_option("--gpu",dest="gpu",action="store_true",help="Use GPU instead of CPU for processing. Requires proper NUMBA and NVIDIA driver configuration. It is recommended to run a single job at a time, especially for large maps! Tested on CUDA 8-compatible cards.",metavar="BOOLEAN",default=False)
+
     (options, args) = parser.parse_args()
+    
+    print(options)
     execute(options)
 
