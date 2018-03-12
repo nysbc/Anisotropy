@@ -32,8 +32,10 @@ def print_progress(iteration, total, prefix='', suffix='', decimals=1):
 ## Added to mute the print statements
 def blockPrint():
         sys.stdout = open(os.devnull, 'w')
+        pass
 
 def enablePrint():
 #       sys.stdout = open('threedfscstdout.log', 'a')
-        sys.stdout = sys.__stdout__
+        #sys.stdout = sys.__stdout__
+        pass
 
