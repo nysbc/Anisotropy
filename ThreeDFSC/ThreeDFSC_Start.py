@@ -180,8 +180,27 @@ if __name__ == '__main__':
 
     parser.add_option("--gpu",dest="gpu",action="store_true",help="Use GPU instead of CPU for processing. Requires proper NUMBA and NVIDIA driver configuration. It is recommended to run a single job at a time, especially for large maps! Tested on CUDA 8-compatible cards.",metavar="BOOLEAN",default=False)
 
+    parser.add_option("--gpu_id",dest="gpu_id",action="store",type="int",default=False,help="If using GPU, specify the device id to use like '--gpu_id=1'. Select only one device (no multi-GPU support).",metavar="INT")
     (options, args) = parser.parse_args()
-    
     print(options)
+    print("\n*******************************************\n")
+    print("Running 3DFSC with the following parameters:\n")
+    
+    for key in options.__dict__:
+        print("%s : %s"%(key,options.__dict__[key]))
+    print("\n*******************************************\n")
+    if options.gpu:
+        import numba.cuda
+        if options.gpu_id:
+            gpu_id = options.gpu_id
+            print("Using GPU ID %s"%gpu_id)
+            try:
+                numba.cuda.select_device(gpu_id)
+            except:
+                raise BaseException("\n\nGPU ID %s does not exist. Make sure CUDA and Numba are installed correctly, and then check available GPU's with `nvidia-smi`.\n\n"%(gpu_id))
+        else:
+            print("Auto-detecting GPU ID")
     execute(options)
+    if options.gpu:
+        numba.cuda.close()
 
