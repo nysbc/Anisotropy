@@ -303,16 +303,17 @@ def cuda_calcProd11(\
     """Calculate partial product Prod11
     """
     x = cuda.grid(1)
-    if x >= kXofR_global_mem[r][:NumOnSurf].shape[0]:
+    #if x >= kXofR_global_mem[r][:NumOnSurf].shape[0]:
+    if x >= kXofR_global_mem[:NumOnSurf].shape[0]:
         return
 
-    Prod11[x] = kXofR_global_mem[r][x]*kXofR_global_mem[r][x] +\
-                kYofR_global_mem[r][x]*kYofR_global_mem[r][x] +\
-                kZofR_global_mem[r][x]*kZofR_global_mem[r][x]
+    #Prod11[x] = kXofR_global_mem[r][x]*kXofR_global_mem[r][x] +\
+    #            kYofR_global_mem[r][x]*kYofR_global_mem[r][x] +\
+    #            kZofR_global_mem[r][x]*kZofR_global_mem[r][x]
 
-    #Prod11[x] = kXofR_global_mem[x]*kXofR_global_mem[x] +\
-    #            kYofR_global_mem[x]*kYofR_global_mem[x] +\
-    #            kZofR_global_mem[x]*kZofR_global_mem[x]
+    Prod11[x] = kXofR_global_mem[x]*kXofR_global_mem[x] +\
+                kYofR_global_mem[x]*kYofR_global_mem[x] +\
+                kZofR_global_mem[x]*kZofR_global_mem[x]
 
 @cuda.jit()
 def cuda_calcInner2(\
@@ -347,16 +348,16 @@ def cuda_calcInner2(\
 
             #Prod12 = kX1*kX2 + kY1*kY2 + kZ1*kZ2
             #Prod12 = kXNow[x]*kXNow[(i+Start)] + kYNow[x]*kYNow[(i+Start)] + kZNow[x]*kZNow[(i+Start)]
-            Prod12 = kXofR_global_mem[r][x]*kXofR_global_mem[r][(i+Start)] + \
-                     kYofR_global_mem[r][x]*kYofR_global_mem[r][(i+Start)] + \
-                     kZofR_global_mem[r][x]*kZofR_global_mem[r][(i+Start)]
+            Prod12 = kXofR_global_mem[x]*kXofR_global_mem[(i+Start)] + \
+                     kYofR_global_mem[x]*kYofR_global_mem[(i+Start)] + \
+                     kZofR_global_mem[x]*kZofR_global_mem[(i+Start)]
 
 
             #Prod22 = kX2*kX2 + kY2*kY2 + kZ2*kZ2
             #Prod22 = kXNow[(i+Start)]*kXNow[(i+Start)] + kYNow[(i+Start)]*kYNow[(i+Start)] + kZNow[(i+Start)]*kZNow[(i+Start)]
-            Prod22 = kXofR_global_mem[r][(i+Start)]*kXofR_global_mem[r][(i+Start)] + \
-                     kYofR_global_mem[r][(i+Start)]*kYofR_global_mem[r][(i+Start)] + \
-                     kZofR_global_mem[r][(i+Start)]*kZofR_global_mem[r][(i+Start)]
+            Prod22 = kXofR_global_mem[(i+Start)]*kXofR_global_mem[(i+Start)] + \
+                     kYofR_global_mem[(i+Start)]*kYofR_global_mem[(i+Start)] + \
+                     kZofR_global_mem[(i+Start)]*kZofR_global_mem[(i+Start)]
             if Prod22==0:
                 return
             else:

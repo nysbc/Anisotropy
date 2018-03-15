@@ -38,7 +38,7 @@ def AveragesOnShellsUsingLogicBCuda(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR
     enablePrint()
     for r in range(1,RMax+1):#range(1,inc+1):
         #if r!=2: continue
-        #if ((r-1)%5)==0: print(r)
+        if ((r-1)%5)==0: print(r)
         NumOnSurf = int(NumAtEachR[r]);
         #LastInd = NumAtEachR[r]-1 ;
         kXNow    = kXofR[r][:NumOnSurf];
@@ -61,8 +61,8 @@ def AveragesOnShellsUsingLogicBCuda(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR
         blockPrint()
         print("NumOnSurf:NumLoops:Stride -  ",NumOnSurf,":",NumLoops,":",Stride)
         stream = cuda.stream()
-        NumAtROutPre_global_mem = cuda.device_array((NumOnSurf,Stride))
-        Prod11_global_mem = cuda.device_array(NumOnSurf,stream=stream,dtype=np.float32)
+        #NumAtROutPre_global_mem = cuda.device_array((NumOnSurf,Stride))
+        #Prod11_global_mem = cuda.device_array(NumOnSurf,stream=stream,dtype=np.float32)
         for jLoop in range(NumLoops):
 
             Start=jLoop*Stride;
@@ -73,12 +73,12 @@ def AveragesOnShellsUsingLogicBCuda(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR
             NumAtROutPre = np.zeros((NumOnSurf,End-Start), dtype=np.int)
             #print("NumAtROutPre.shape %g %g" %(NumAtROutPre.shape))
             InnerLogicCuda_start = time.time()
-            NumAtROutPre_global_mem = AveragesOnShellsInnerLogicKernelCuda(#kXNow,kYNow,kZNow,\
-                                                                           NumAtROutPre_global_mem,\
-                                                                           Prod11_global_mem,\
-                                                                           kXofR_global_mem,\
-                                                                           kYofR_global_mem,\
-                                                                           kZofR_global_mem,\
+            NumAtROutPre_global_mem = AveragesOnShellsInnerLogicKernelCuda(kXNow,kYNow,kZNow,\
+                                                                           #NumAtROutPre_global_mem,\
+                                                                           #Prod11_global_mem,\
+                                                                           #kXofR_global_mem,\
+                                                                           #kYofR_global_mem,\
+                                                                           #kZofR_global_mem,\
                                                                            retofRR_global_mem,\
                                                                            retofRI_global_mem,\
                                                                            n1ofR_global_mem,\
@@ -130,12 +130,12 @@ def AveragesOnShellsUsingLogicBCuda(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR
 #%%     Section -1 Function Definitions %    For a given shell, this function returns whether a pair are close or not
 
 def AveragesOnShellsInnerLogicKernelCuda(\
-                                         #kXNow,kYNow,kZNow,\
-                                         NumAtROutPre_global_mem,\
-                                         Prod11_global_mem,\
-                                         kXofR_global_mem,\
-                                         kYofR_global_mem,\
-                                         kZofR_global_mem,\
+                                         kXNow,kYNow,kZNow,\
+                                         #NumAtROutPre_global_mem,\
+                                         #Prod11_global_mem,\
+                                         #kXofR_global_mem,\
+                                         #kYofR_global_mem,\
+                                         #kZofR_global_mem,\
                                          retofRR_global_mem,\
                                          retofRI_global_mem,\
                                          n1ofR_global_mem,\
@@ -147,21 +147,24 @@ def AveragesOnShellsInnerLogicKernelCuda(\
                                          r):
 
     stream = cuda.stream()
-
     time_to_device = time.time()
+
+
+    NumAtROutPre_global_mem = cuda.device_array((NumOnSurf,End-Start))
+    Prod11_global_mem = cuda.device_array(NumOnSurf,stream=stream,dtype=np.float32)
 
     # Set threads per block and blocks per grid
     threadsperblock = (1024,1,1)
-    blockspergrid_x = int(math.ceil(kXofR_global_mem[r][:NumOnSurf].shape[0] / threadsperblock[0]))
+    blockspergrid_x = int(math.ceil(kXNow[:NumOnSurf].shape[0] / threadsperblock[0]))
     blockspergrid = (blockspergrid_x,1,1)
     start_cuda = time.time()
 
     # Kernel 1, calculate Prod11
     cuda_kernels.cuda_calcProd11[blockspergrid, threadsperblock,stream](\
-                                                                        #kXNow,kYNow,kZNow,\
-                                                                        kXofR_global_mem,\
-                                                                        kYofR_global_mem,\
-                                                                        kZofR_global_mem,\
+                                                                        kXNow,kYNow,kZNow,\
+                                                                        #kXofR_global_mem,\
+                                                                        #kYofR_global_mem,\
+                                                                        #kZofR_global_mem,\
                                                                         Prod11_global_mem,\
                                                                         NumOnSurf,\
                                                                         r)
@@ -169,10 +172,10 @@ def AveragesOnShellsInnerLogicKernelCuda(\
     stream.synchronize()
     # Kernel 2, calculate Inner2
     cuda_kernels.cuda_calcInner2[blockspergrid, threadsperblock,stream](\
-                                                                        #kXNow,kYNow,kZNow,\
-                                                                        kXofR_global_mem,\
-                                                                        kYofR_global_mem,\
-                                                                        kZofR_global_mem,\
+                                                                        kXNow,kYNow,kZNow,\
+                                                                        #kXofR_global_mem,\
+                                                                        #kYofR_global_mem,\
+                                                                        #kZofR_global_mem,\
                                                                         Prod11_global_mem,\
                                                                         NumAtROutPre_global_mem,\
                                                                         End,\
