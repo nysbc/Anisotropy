@@ -28,9 +28,9 @@ def AveragesOnShellsUsingLogicBCuda(inc,retofRR,retofRI,n1ofR,n2ofR, kXofR,kYofR
 
     # Load all data into GPU memory
     # Need to convert data to contiguous arrays
-    kXofR_global_mem = cuda.to_device(np.ascontiguousarray(kXofR,dtype=np.float32))
-    kYofR_global_mem = cuda.to_device(np.ascontiguousarray(kYofR,dtype=np.float32))
-    kZofR_global_mem = cuda.to_device(np.ascontiguousarray(kZofR,dtype=np.float32))
+    #kXofR_global_mem = cuda.to_device(np.ascontiguousarray(kXofR,dtype=np.float32))
+    #kYofR_global_mem = cuda.to_device(np.ascontiguousarray(kYofR,dtype=np.float32))
+    #kZofR_global_mem = cuda.to_device(np.ascontiguousarray(kZofR,dtype=np.float32))
     retofRR_global_mem = cuda.to_device(np.ascontiguousarray(retofRR,dtype=np.float32))
     retofRI_global_mem = cuda.to_device(np.ascontiguousarray(retofRI,dtype=np.float32))
     n1ofR_global_mem = cuda.to_device(np.ascontiguousarray(n1ofR,dtype=np.float32))
