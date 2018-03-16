@@ -1,26 +1,35 @@
 ### 3DFSC Program Suite Version 3.0 (16 March 2018) ###
 
 This is the most recent version of 3DFSC, by Philip Baldwin, Yong Zi Tan, and Dmitry Lyumkis.
+
 GPU code and Conda environment by Carl Negro.
+
 3DFSC Program Suite requires Anaconda 3 to run, and UCSF Chimera to visualize the outputs.
 
 ## Installation ##
 1) Be in the desired directory where you want to install the 3DFSC Program Suite.
 2) Type `git clone https://github.com/nysbc/Anisotropy.git` to get a copy of the program. Make sure you have the git package installed in your Linux machine else this would not work.
 3) Type `cd Anisotropy` to enter the directory.
-4) Type `conda env create -f environment.yml` to create the Anaconda environment containing required packages. This would only work if Anaconda 3 is installed and used as the default Python. You do not need to activate the new environment yet.
-5) Edit the file `run3DFSC.csh` with a text editor to reflect your 3DFSC directory (which contains `ThreeDFSC_Start.py`). You can copy this file anywhere to start the 3DFSC program. It might be a good idea to make an alias to this `run3DFSC.csh` file.
+
+4) Run the init script by executing the command `./init.sh`. This will create the necessary Anaconda3 environment, auto-detect your repository path, and generate run3DFSC executable scripts for bash, sh, and csh terminal shells. This will only work if Anaconda 3 is installed and Anaconda's Python interpreter is on your PATH variable.
+
 
 ## Execution ##
 
 1) Be in the directory containing your maps. Relative paths are okay for the program.
-2) Execute the `run3DFSC.csh` script. If no options are given, it will print out the help menu for you.
-3) Runs usually take from minutes up to hours for extremely large box sizes (we have tested 600^3). Progress bars will help indicate the state of processing.
-4) 3DFSC is also accessible programmaticaly, for example:
-    <pre>import Anisotropy.ThreeDFSC.ThreeDFSC_Start as run_fsc
-    run_fsc.execute(options)</pre>
-    
-    where "options" is an opt-parser object containing the parameters of the program.
+2) Copy the run3DFSC.bash, .csh or .sh script to this directory.
+3) To view the parameters, run the script like `./run3DFSC.sh -h`.
+4) Execute the run3DFSC script with the appropriate parameters. Runs usually take from minutes up to hours for extremely large box sizes (we have tested 600^3). Progress bars will help indicate the state of processing.
+
+## GPU Execution ##
+
+3DFSC now has GPU support through Numba for faster execution (typically ~10x faster than the CPU implementation). This requires that CUDA is installed correctly. See http://www.nvidia.com/Download/index.aspx. 
+
+To make use of a GPU, simply append the `--gpu` flag as a parameter to your ./run3DFSC.sh script.
+
+You can select which GPU to use for processing with the `--gpu_id` flag. E.g. `--gpu_id=2` to run 3DFSC on the GPU with index number 2. 
+
+To see a list of available GPU's and corresponding indices, run `nvidia-smi`. If you are unable to run `nvidia-smi`, check to make sure you have CUDA installed correctly. See http://www.nvidia.com/Download/index.aspx.
 
 ## Example: Haemagglutinin Trimer with Preferred Orientation Collected at Tilts ##
 
