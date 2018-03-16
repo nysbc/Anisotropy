@@ -16,10 +16,10 @@ GPU code and Conda environment by Carl Negro.
 
 ## Execution ##
 
-1) Be in the directory containing your maps. Relative paths are okay for the program.
+1) Navigate to the directory containing your maps.
 2) Copy the run3DFSC.bash, .csh or .sh script to this directory.
-3) To view the parameters, run the script like `./run3DFSC.sh -h`.
-4) Execute the run3DFSC script with the appropriate parameters. Runs usually take from minutes up to hours for extremely large box sizes (we have tested 600^3). Progress bars will help indicate the state of processing.
+3) To view the 3DFSC parameters, access the help info like `./run3DFSC.sh -h`.
+4) Execute the run3DFSC script with the appropriate parameters. It can take from minutes for small maps up to hours for extremely large box sizes (we have tested 600^3). Progress bars will help indicate the state of processing.
 
 ## GPU Execution ##
 
@@ -27,9 +27,11 @@ GPU code and Conda environment by Carl Negro.
 
 To make use of a GPU, simply append the `--gpu` flag as a parameter to your ./run3DFSC.sh script.
 
-You can select which GPU to use for processing with the `--gpu_id` flag. E.g. `--gpu_id=2` to run 3DFSC on the GPU with index number 2. 
+You can select which GPU to use for processing with the `--gpu_id` flag. E.g. `--gpu_id=2` to run 3DFSC on the GPU with index number 2. The program currently only allows a single GPU to be used at once; this may change in future versions.
 
 To see a list of available GPU's and corresponding indices, run `nvidia-smi`. If you are unable to run `nvidia-smi`, check to make sure you have CUDA installed correctly. See http://www.nvidia.com/Download/index.aspx.
+
+Note that GPU memory is limited, so that processing jobs with large box sizes will fail. 
 
 ## Example: Haemagglutinin Trimer with Preferred Orientation Collected at Tilts ##
 
