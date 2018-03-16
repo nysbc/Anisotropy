@@ -7,10 +7,10 @@ GPU code and Conda environment by Carl Negro.
 3DFSC Program Suite requires Anaconda 3 to run, and UCSF Chimera to visualize the outputs.
 
 ## Installation ##
-1) Be in the desired directory where you want to install the 3DFSC Program Suite.
-2) Type `git clone https://github.com/nysbc/Anisotropy.git` to get a copy of the program. Make sure you have the git package installed in your Linux machine else this would not work.
-3) Type `cd Anisotropy` to enter the directory.
 
+1) Navigate to the directory where you want to install the 3DFSC Program Suite.
+2) Type `git clone https://github.com/nysbc/Anisotropy.git` to clone a copy of the program from the Github repository. Make sure you have git installed properly or else this will fail.
+3) Type `cd Anisotropy` to enter the directory.
 4) Run the init script by executing the command `./init.sh`. This will create the necessary Anaconda3 environment, auto-detect your repository path, and generate run3DFSC executable scripts for bash, sh, and csh terminal shells. This will only work if Anaconda 3 is installed and Anaconda's Python interpreter is on your PATH variable.
 
 
@@ -34,7 +34,7 @@ To see a list of available GPU's and corresponding indices, run `nvidia-smi`. If
 ## Example: Haemagglutinin Trimer with Preferred Orientation Collected at Tilts ##
 
 1) Go the Example directory
-2) Type `../run3DFSC.csh --halfmap1=T40_map1_Masked_144.mrc --halfmap2=T40_map2_Masked_144.mrc --fullmap=130K-T40.mrc --apix=1.31 --ThreeDFSC=T40-3DFSC` to run the Example. It should take no longer than 2 minutes.
+2) Type `../run3DFSC.csh --halfmap1=T40_map1_Masked_144.mrc --halfmap2=T40_map2_Masked_144.mrc --fullmap=130K-T40.mrc --apix=1.31 --ThreeDFSC=T40-3DFSC` to run the Example. It should take no longer than 2 minutes (~15-20 seconds with a Pascal-generation GPU).
 3) The folder already contains pre-calculated results as well as a log of a successful run (`output.log`).
 
 Questions and feedback welcomed, and should be sent to prbprb2@gmail.com, ytan@nysbc.org and dlyumkis@salk.edu.
