@@ -182,7 +182,6 @@ if __name__ == '__main__':
 
     parser.add_option("--gpu_id",dest="gpu_id",action="store",type="int",default=False,help="If using GPU, specify the device id to use like '--gpu_id=1'. Select only one device (no multi-GPU support).",metavar="INT")
     (options, args) = parser.parse_args()
-    print(options)
     print("\n*******************************************\n")
     print("Running 3DFSC with the following parameters:\n")
     
